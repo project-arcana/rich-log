@@ -6,14 +6,14 @@ namespace rlog
 {
 struct prefix
 {
-    explicit prefix(char const* v) : value(v) {}
+    explicit constexpr prefix(char const* v) : value(v) {}
 
     char const* value;
 };
 
 struct sep
 {
-    explicit sep(char const* v) : value(v) {}
+    explicit constexpr sep(char const* v) : value(v) {}
 
     char const* value;
 };
@@ -22,7 +22,7 @@ static constexpr struct no_sep_t
 {
 } no_sep;
 
-static constexpr struct use_err_stream_t
+static constexpr struct err_out_t
 {
 } err_out;
 

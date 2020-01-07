@@ -18,7 +18,7 @@ private:
     void configure(prefix const& p) { _prefix = p.value; }
     void configure(sep const& s) { _sep = s.value; }
     void configure(no_sep_t) { _sep = ""; }
-    void configure(use_err_stream_t) { _use_err_stream = true; }
+    void configure(err_out_t) { _use_err_stream = true; }
     void configure(location const& loc) { _location = &loc; }
 
     void configure(info_t) { _prefix = "[info] "; }
