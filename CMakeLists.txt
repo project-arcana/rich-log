@@ -14,11 +14,11 @@ file(GLOB_RECURSE SOURCES "src/*.cc" "src/*.hh")
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" FILES ${SOURCES})
 
-add_library(rich-logging STATIC ${SOURCES})
+add_library(rich-log STATIC ${SOURCES})
 
-target_include_directories(rich-logging PUBLIC src/)
+target_include_directories(rich-log PUBLIC src/)
 
-target_link_libraries(rich-logging PUBLIC
+target_link_libraries(rich-log PUBLIC
     clean-core
     reflector
 )
@@ -28,12 +28,12 @@ target_link_libraries(rich-logging PUBLIC
 # set up compile flags
 
 if (MSVC)
-    target_compile_options(rich-logging PUBLIC /MP)
+    target_compile_options(rich-log PUBLIC /MP)
 else()
-    target_compile_options(rich-logging PRIVATE -Wall -fPIC)
-    target_link_libraries(rich-logging PUBLIC -fuse-ld=gold)
+    target_compile_options(rich-log PRIVATE -Wall -fPIC)
+    target_link_libraries(rich-log PUBLIC -fuse-ld=gold)
 endif()
 
 if (RICH_LOG_FORCE_MACRO_PREFIX)
-    target_compile_definitions(rich-logging PUBLIC RICH_LOG_FORCE_MACRO_PREFIX)
+    target_compile_definitions(rich-log PUBLIC RICH_LOG_FORCE_MACRO_PREFIX)
 endif()
