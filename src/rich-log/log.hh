@@ -8,7 +8,7 @@
 #ifndef RICH_LOG_FORCE_MACRO_PREFIX
 
 #define LOG(...) RICH_LOG(__VA_ARGS__)
-#define LOG_EXPR(expr, ...) RICH_LOG_EXPR(expr, __VA_ARGS__)
+#define LOG_EXPR(expr, ...) RICH_LOG_EXPR(expr, ##__VA_ARGS__)
 
 #endif
 
@@ -16,7 +16,7 @@
     [] {                                                                                    \
         using namespace rlog;                                                               \
         static constexpr ::rlog::location _rlog_loc = {CC_PRETTY_FUNC, __FILE__, __LINE__}; \
-        return ::rlog::MessageBuilder(_rlog_loc);                                           \
+        return ::rlog::MessageBuilder(_rlog_loc, ##__VA_ARGS__);                            \
     }()
 
 #define RICH_LOG_EXPR(expr, ...) RICH_LOG(no_sep, ##__VA_ARGS__) << #expr " = " << (expr)

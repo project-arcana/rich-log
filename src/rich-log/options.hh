@@ -15,14 +15,14 @@ enum channel
 
 struct prefix
 {
-    prefix(char const* v) : value(v) {}
+    explicit prefix(char const* v) : value(v) {}
 
     char const* value;
 };
 
 struct sep
 {
-    sep(char const* v) : value(v) {}
+    explicit sep(char const* v) : value(v) {}
 
     char const* value;
 };

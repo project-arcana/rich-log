@@ -1,9 +1,12 @@
 #pragma once
 
 #include <clean-core/forward.hh>
+#include <clean-core/string.hh>
 
 #include <rich-log/fwd.hh>
 #include <rich-log/options.hh>
+
+#include <reflector/to_string.hh>
 
 namespace rlog
 {
@@ -29,9 +32,10 @@ public:
     // object log
 public:
     template <class T>
-    MessageBuilder& operator<<(T&& value)
+    MessageBuilder& operator<<(T const& value)
     {
-        // TODO
+        // TODO: some structured alternative?
+        append(rf::to_string(value));
         return *this;
     }
 
@@ -51,9 +55,20 @@ public:
     ~MessageBuilder();
 
 private:
+    void append(cc::string_view s)
+    {
+        if (!_msg.empty())
+            _msg += _sep;
+        _msg += s;
+    }
+
+private:
     location const& _location;
     channel _channel = info;
     char const* _prefix = "";
     char const* _sep = ", ";
+
+    // TODO: some cleverly pooled buffer structure
+    cc::string _msg;
 };
 }
