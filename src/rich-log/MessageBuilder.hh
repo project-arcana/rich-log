@@ -14,7 +14,7 @@ namespace rlog
 class MessageBuilder
 {
     // options
-private:
+public:
     void configure(prefix const& p) { _prefix = p.value; }
     void configure(sep const& s) { _sep = s.value; }
     void configure(no_sep_t) { _sep = ""; }
