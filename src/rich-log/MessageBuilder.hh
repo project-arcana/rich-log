@@ -16,18 +16,27 @@ class MessageBuilder
     // options
 private:
     void configure(prefix const& p) { _prefix = p.value; }
-    void configure(channel c) { _channel = c; }
     void configure(sep const& s) { _sep = s.value; }
     void configure(no_sep_t) { _sep = ""; }
+    void configure(use_err_stream_t) { _use_err_stream = true; }
+    void configure(location const& loc) { _location = &loc; }
+
+    void configure(info_t) { _prefix = "[info] "; }
+    void configure(warning_t)
+    {
+        _prefix = "[warn] ";
+        _use_err_stream = true;
+    }
+    void configure(error_t)
+    {
+        _prefix = "[error] ";
+        _use_err_stream = true;
+    }
+    void configure(debug_t) { _prefix = "[debug] "; }
 
     // formatted message
 public:
-    template <class... Args>
-    MessageBuilder& operator()(char const* fmt, Args&&... args)
-    {
-        // TODO
-        return *this;
-    }
+    MessageBuilder& operator()(char const* fmt, ...);
 
     // object log
 public:
@@ -41,7 +50,7 @@ public:
 
 public:
     template <class... Args>
-    MessageBuilder(rlog::location const& loc, Args&&... args) : _location(loc)
+    MessageBuilder(Args&&... args)
     {
         // configure message
         ((this->configure(cc::forward<Args>(args))), ...);
@@ -63,12 +72,13 @@ private:
     }
 
 private:
-    location const& _location;
-    channel _channel = info;
+    location const* _location = nullptr;
     char const* _prefix = "";
     char const* _sep = ", ";
 
     // TODO: some cleverly pooled buffer structure
     cc::string _msg;
+
+    bool _use_err_stream = false;
 };
 }

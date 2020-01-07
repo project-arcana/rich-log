@@ -1,38 +1,40 @@
 #include "MessageBuilder.hh"
 
+#include <cstdarg>
 #include <cstdio>
 
 using namespace rlog;
 
+MessageBuilder& MessageBuilder::operator()(const char* fmt, ...)
+{
+    if (fmt != nullptr)
+    {
+        char formatted[1024];
+        {
+            va_list args;
+            va_start(args, fmt);
+            ::vsprintf_s(formatted, 1024, fmt, args);
+            va_end(args);
+        }
+
+        append(formatted);
+    }
+
+    return *this;
+}
+
 MessageBuilder::~MessageBuilder()
 {
     // TODO: send message to logger
-
     // DEBUG: console for now
 
-    auto const stream = _channel == warning || _channel == error ? stderr : stdout;
+    auto const stream = _use_err_stream ? stderr : stdout;
 
     cc::string m;
-    switch (_channel)
-    {
-    case info:
-        m += "[info]";
-        break;
-    case warning:
-        m += "[warn]";
-        break;
-    case error:
-        m += "[error]";
-        break;
-    case debug:
-        m += "[debug]";
-        break;
-    default:
-        m += "[unknown]";
-        break;
-    }
-    m += ' ';
+    m.reserve(_msg.size() + 1 + std::strlen(_prefix));
+    m += _prefix;
     m += _msg;
     m += '\n';
-    fputs(m.c_str(), stream);
+    std::fputs(m.c_str(), stream);
+    std::fflush(stream);
 }
