@@ -13,7 +13,12 @@ MessageBuilder& MessageBuilder::operator()(const char* fmt, ...)
         {
             va_list args;
             va_start(args, fmt);
-            ::vsprintf_s(formatted, 1024, fmt, args);
+
+#ifdef CC_OS_WINDOWS
+            std::vsprintf_s(formatted, 1024, fmt, args);
+#elif defined(CC_OS_LINUX)
+            std::vsnprintf(formatted, 1024, fmt, args);
+#endif
             va_end(args);
         }
 
