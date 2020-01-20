@@ -1,6 +1,7 @@
 #pragma once
 
 #include <clean-core/forward.hh>
+#include <clean-core/span.hh>
 #include <clean-core/string.hh>
 
 #include <rich-log/fwd.hh>
@@ -14,18 +15,39 @@ namespace rlog
 class MessageBuilder
 {
     // options
-private:
+public:
     void configure(prefix const& p) { _prefix = p.value; }
-    void configure(channel c) { _channel = c; }
     void configure(sep const& s) { _sep = s.value; }
     void configure(no_sep_t) { _sep = ""; }
+    void configure(err_out_t) { _use_err_stream = true; }
+    void configure(location const& loc) { _location = &loc; }
+
+    void configure(info_t) { _prefix = "[info] "; }
+    void configure(warning_t)
+    {
+        _prefix = "[warn] ";
+        _use_err_stream = true;
+    }
+    void configure(error_t)
+    {
+        _prefix = "[error] ";
+        _use_err_stream = true;
+    }
+    void configure(debug_t) { _prefix = "[debug] "; }
 
     // formatted message
 public:
     template <class... Args>
-    MessageBuilder& operator()(char const* fmt, Args&&... args)
+    MessageBuilder& operator()(char const* fmt, Args const&... args)
     {
-        // TODO
+        if constexpr (sizeof...(Args) == 0)
+            append(fmt);
+        else
+        {
+            cc::string args_s[] = {rf::to_string(args)...};
+            append_formatted(fmt, args_s);
+        }
+
         return *this;
     }
 
@@ -41,7 +63,7 @@ public:
 
 public:
     template <class... Args>
-    MessageBuilder(rlog::location const& loc, Args&&... args) : _location(loc)
+    MessageBuilder(Args&&... args)
     {
         // configure message
         ((this->configure(cc::forward<Args>(args))), ...);
@@ -62,13 +84,16 @@ private:
         _msg += s;
     }
 
+    void append_formatted(cc::string_view fmt, cc::span<cc::string const> args);
+
 private:
-    location const& _location;
-    channel _channel = info;
+    location const* _location = nullptr;
     char const* _prefix = "";
     char const* _sep = ", ";
 
     // TODO: some cleverly pooled buffer structure
     cc::string _msg;
+
+    bool _use_err_stream = false;
 };
 }

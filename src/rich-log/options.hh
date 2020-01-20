@@ -4,25 +4,16 @@
 
 namespace rlog
 {
-// not enum class so that LOG(info) works
-enum channel
-{
-    info,
-    warning,
-    error,
-    debug
-};
-
 struct prefix
 {
-    explicit prefix(char const* v) : value(v) {}
+    explicit constexpr prefix(char const* v) : value(v) {}
 
     char const* value;
 };
 
 struct sep
 {
-    explicit sep(char const* v) : value(v) {}
+    explicit constexpr sep(char const* v) : value(v) {}
 
     char const* value;
 };
@@ -30,4 +21,23 @@ struct sep
 static constexpr struct no_sep_t
 {
 } no_sep;
+
+static constexpr struct err_out_t
+{
+} err_out;
+
+// preconfigured channels
+static constexpr struct info_t
+{
+} info;
+static constexpr struct warning_t
+{
+} warning;
+static constexpr struct error_t
+{
+} error;
+static constexpr struct debug_t
+{
+} debug;
+
 }
