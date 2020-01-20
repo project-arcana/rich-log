@@ -17,6 +17,7 @@ void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string c
             CC_ASSERT(arg_i < args.size());
             _msg += args[arg_i];
             ++arg_i;
+            ++i;
         }
         else
         {
