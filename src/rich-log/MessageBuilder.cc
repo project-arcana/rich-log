@@ -3,24 +3,26 @@
 #include <cstdarg>
 #include <cstdio>
 
+#include <clean-core/assert.hh>
+
 using namespace rlog;
 
-MessageBuilder& MessageBuilder::operator()(const char* fmt, ...)
+void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string const> args)
 {
-    if (fmt != nullptr)
+    size_t arg_i = 0;
+    for (size_t i = 0; i < fmt.size(); ++i)
     {
-        char formatted[1024];
+        if (i + 1 < fmt.size() && fmt[i] == '{' && fmt[i + 1] == '}')
         {
-            va_list args;
-            va_start(args, fmt);
-            std::vsnprintf(formatted, 1024, fmt, args);
-            va_end(args);
+            CC_ASSERT(arg_i < args.size());
+            _msg += args[arg_i];
+            ++arg_i;
         }
-
-        append(formatted);
+        else
+        {
+            _msg += fmt[i];
+        }
     }
-
-    return *this;
 }
 
 MessageBuilder::~MessageBuilder()
@@ -35,6 +37,7 @@ MessageBuilder::~MessageBuilder()
     m += _prefix;
     m += _msg;
     m += '\n';
+
     std::fputs(m.c_str(), stream);
     std::fflush(stream);
 }

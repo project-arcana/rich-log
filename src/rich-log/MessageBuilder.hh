@@ -1,6 +1,7 @@
 #pragma once
 
 #include <clean-core/forward.hh>
+#include <clean-core/span.hh>
 #include <clean-core/string.hh>
 
 #include <rich-log/fwd.hh>
@@ -36,7 +37,19 @@ public:
 
     // formatted message
 public:
-    MessageBuilder& operator()(char const* fmt, ...);
+    template <class... Args>
+    MessageBuilder& operator()(char const* fmt, Args const&... args)
+    {
+        if constexpr (sizeof...(Args) == 0)
+            append(fmt);
+        else
+        {
+            cc::string args_s[] = {rf::to_string(args)...};
+            append_formatted(fmt, args_s);
+        }
+
+        return *this;
+    }
 
     // object log
 public:
@@ -70,6 +83,8 @@ private:
             _msg += _sep;
         _msg += s;
     }
+
+    void append_formatted(cc::string_view fmt, cc::span<cc::string const> args);
 
 private:
     location const* _location = nullptr;
