@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(RichLogging)
 
+include(cmake/UnityBuild.cmake)
+include(cmake/SourceGroup.cmake)
+
 # =========================================
 # global options
 
@@ -12,7 +15,7 @@ option(RICH_LOG_FORCE_MACRO_PREFIX "if true, only RICH_ macro versions are avail
 
 file(GLOB_RECURSE SOURCES "src/*.cc" "src/*.hh")
 
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" FILES ${SOURCES})
+arcana_source_group(SOURCES)
 
 add_library(rich-log STATIC ${SOURCES})
 
