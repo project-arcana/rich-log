@@ -89,7 +89,7 @@ private:
 private:
     location const* _location = nullptr;
     char const* _prefix = "";
-    char const* _sep = ", ";
+    char const* _sep = " ";
 
     // TODO: some cleverly pooled buffer structure
     cc::string _msg;
