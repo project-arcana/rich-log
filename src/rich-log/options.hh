@@ -22,7 +22,7 @@ struct domain
     char const* value;      ///< Name of the domain, nullptr is valid
     char const* color_code; ///< ANSI color codes, default: empty
 
-    static constexpr domain null() { return domain{nullptr}; }
+    static constexpr domain unspecified() { return domain{"LOG", "\u001b[38;5;238m"}; }
 };
 
 struct sep

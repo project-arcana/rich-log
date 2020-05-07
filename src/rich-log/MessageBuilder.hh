@@ -89,7 +89,7 @@ private:
 
 private:
     location const* _location = nullptr;
-    domain _domain = domain::null();
+    domain _domain = domain::unspecified();
     severity _severity = severity::info();
     char const* _sep = ", ";
 
