@@ -18,7 +18,7 @@ struct severity
 };
 struct domain
 {
-    explicit constexpr domain(char const* v, char const* color = "\u001b[38;5;241m") : value(v), color_code(color) {}
+    explicit constexpr domain(char const* v, char const* color = "\u001b[38;5;244m") : value(v), color_code(color) {}
     char const* value;      ///< Name of the domain, nullptr is valid
     char const* color_code; ///< ANSI color codes, default: empty
 
