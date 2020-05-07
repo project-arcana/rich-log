@@ -1,6 +1,7 @@
 #pragma once
 
 #include <clean-core/forward.hh>
+#include <clean-core/function_ptr.hh>
 #include <clean-core/span.hh>
 #include <clean-core/string.hh>
 
@@ -16,41 +17,11 @@ class MessageBuilder
 {
     // options
 public:
-    void configure(severity const& p) { _severity = p; }
-    void configure(domain const& p) { _domain = p; }
-    void configure(sep s) { _sep = s.value; }
-    void configure(no_sep_t) { _sep = ""; }
-    void configure(err_out_t) { _use_err_stream = true; }
-    void configure(location const& loc) { _location = &loc; }
-
-    void configure(info_t) { _severity = severity::info(); }
-    void configure(warning_t)
-    {
-        _severity = severity::warning();
-        _use_err_stream = true;
-    }
-    void configure(error_t)
-    {
-        _severity = severity::error();
-        _use_err_stream = true;
-    }
-    void configure(debug_t) { _severity = severity::debug(); }
-
-    // formatted message
-public:
-    template <class... Args>
-    MessageBuilder& operator()(char const* fmt, Args const&... args)
-    {
-        if constexpr (sizeof...(Args) == 0)
-            append(fmt);
-        else
-        {
-            cc::string args_s[] = {rf::to_string(args)...};
-            append_formatted(fmt, args_s);
-        }
-
-        return *this;
-    }
+    constexpr void set_severity(severity const& s) { _severity = s; }
+    constexpr void set_domain(domain const& d) { _domain = d; }
+    constexpr void set_separator(char const* s) { _sep = s; }
+    constexpr void set_use_error_stream(bool enabled) { _use_err_stream = enabled; }
+    void set_location(location const& loc) { _location = &loc; }
 
     // object log
 public:
@@ -63,11 +34,41 @@ public:
     }
 
 public:
-    template <class... Args>
-    MessageBuilder(Args&&... args)
+    MessageBuilder() = default;
+
+    MessageBuilder(location const* location, cc::function_ptr<void(MessageBuilder&)> functor = nullptr) : _location(location)
     {
-        // configure message
-        ((this->configure(cc::forward<Args>(args))), ...);
+        if (functor)
+            functor(*this);
+    }
+
+    template <class... Args>
+    void format(char const* fmt, Args const&... args)
+    {
+        if constexpr (sizeof...(Args) == 0)
+            append(fmt);
+        else
+        {
+            cc::string args_s[] = {rf::to_string(args)...};
+            append_formatted(fmt, args_s);
+        }
+    }
+
+    MessageBuilder& operator()() { return *this; }
+
+    template <class... Args>
+    MessageBuilder& operator()(char const* fmt, Args&&... args)
+    {
+        format(fmt, cc::forward<Args>(args)...);
+        return *this;
+    }
+
+    template <class... Args>
+    MessageBuilder& operator()(cc::function_ptr<void(MessageBuilder&)> functor, char const* fmt, Args&&... args)
+    {
+        functor(*this);
+        format(fmt, cc::forward<Args>(args)...);
+        return *this;
     }
 
     MessageBuilder(MessageBuilder const&) = delete;
