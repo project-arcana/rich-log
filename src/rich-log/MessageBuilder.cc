@@ -13,7 +13,7 @@ void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string c
     {
         if (i + 1 < fmt.size() && fmt[i] == '{' && fmt[i + 1] == '}')
         {
-            CC_ASSERT(arg_i < args.size());
+            CC_ASSERT(arg_i < args.size() && "more escape sequences than provided arguments");
             _msg += args[arg_i];
             ++arg_i;
             ++i;
@@ -23,6 +23,7 @@ void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string c
             _msg += fmt[i];
         }
     }
+    CC_ASSERT(arg_i == args.size() && "less escape sequences than provided arguments");
 }
 
 MessageBuilder::~MessageBuilder()
