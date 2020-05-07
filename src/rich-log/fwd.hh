@@ -2,7 +2,9 @@
 
 namespace rlog
 {
+struct severity;
+struct domain;
+struct sep;
 struct location;
-struct message;
 class MessageBuilder;
 }
