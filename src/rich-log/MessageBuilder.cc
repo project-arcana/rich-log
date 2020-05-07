@@ -1,9 +1,8 @@
 #include "MessageBuilder.hh"
 
-#include <cstdarg>
-#include <cstdio>
-
 #include <clean-core/assert.hh>
+
+#include <rich-log/logger.hh>
 
 using namespace rlog;
 
@@ -30,15 +29,5 @@ MessageBuilder::~MessageBuilder()
 {
     // TODO: send message to logger
     // DEBUG: console for now
-
-    auto const stream = _use_err_stream ? stderr : stdout;
-
-    cc::string m;
-    m.reserve(_msg.size() + 1 + std::strlen(_prefix));
-    m += _prefix;
-    m += _msg;
-    m += '\n';
-
-    std::fputs(m.c_str(), stream);
-    std::fflush(stream);
+    print_to_console(_severity, _domain, _msg.c_str(), _use_err_stream, true);
 }

@@ -16,24 +16,25 @@ class MessageBuilder
 {
     // options
 public:
-    void configure(prefix const& p) { _prefix = p.value; }
-    void configure(sep const& s) { _sep = s.value; }
+    void configure(severity const& p) { _severity = p; }
+    void configure(domain const& p) { _domain = p; }
+    void configure(sep s) { _sep = s.value; }
     void configure(no_sep_t) { _sep = ""; }
     void configure(err_out_t) { _use_err_stream = true; }
     void configure(location const& loc) { _location = &loc; }
 
-    void configure(info_t) { _prefix = "[info] "; }
+    void configure(info_t) { _severity = severity::info(); }
     void configure(warning_t)
     {
-        _prefix = "[warn] ";
+        _severity = severity::warning();
         _use_err_stream = true;
     }
     void configure(error_t)
     {
-        _prefix = "[error] ";
+        _severity = severity::error();
         _use_err_stream = true;
     }
-    void configure(debug_t) { _prefix = "[debug] "; }
+    void configure(debug_t) { _severity = severity::debug(); }
 
     // formatted message
 public:
@@ -88,7 +89,8 @@ private:
 
 private:
     location const* _location = nullptr;
-    char const* _prefix = "";
+    domain _domain = domain::null();
+    severity _severity = severity::info();
     char const* _sep = ", ";
 
     // TODO: some cleverly pooled buffer structure
