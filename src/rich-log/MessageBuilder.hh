@@ -91,7 +91,7 @@ private:
     location const* _location = nullptr;
     domain _domain = domain::unspecified();
     severity _severity = severity::info();
-    char const* _sep = ", ";
+    char const* _sep = " ";
 
     // TODO: some cleverly pooled buffer structure
     cc::string _msg;
