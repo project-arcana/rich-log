@@ -1,9 +1,8 @@
 #include "MessageBuilder.hh"
 
-#include <cstdarg>
-#include <cstdio>
-
 #include <clean-core/assert.hh>
+
+#include <rich-log/logger.hh>
 
 using namespace rlog;
 
@@ -14,7 +13,7 @@ void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string c
     {
         if (i + 1 < fmt.size() && fmt[i] == '{' && fmt[i + 1] == '}')
         {
-            CC_ASSERT(arg_i < args.size());
+            CC_ASSERT(arg_i < args.size() && "more escape sequences than provided arguments");
             _msg += args[arg_i];
             ++arg_i;
             ++i;
@@ -24,21 +23,12 @@ void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string c
             _msg += fmt[i];
         }
     }
+    CC_ASSERT(arg_i == args.size() && "less escape sequences than provided arguments");
 }
 
 MessageBuilder::~MessageBuilder()
 {
     // TODO: send message to logger
     // DEBUG: console for now
-
-    auto const stream = _use_err_stream ? stderr : stdout;
-
-    cc::string m;
-    m.reserve(_msg.size() + 1 + std::strlen(_prefix));
-    m += _prefix;
-    m += _msg;
-    m += '\n';
-
-    std::fputs(m.c_str(), stream);
-    std::fflush(stream);
+    print_to_console(_severity, _domain, _msg.c_str(), _use_err_stream, true);
 }
