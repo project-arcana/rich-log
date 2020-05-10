@@ -21,10 +21,8 @@ thread_local char tls_thread_name[32] = "";
 rlog::console_log_style g_log_style = rlog::console_log_style::verbose;
 }
 
-void rlog::print_to_console(severity severity, rlog::domain domain, const char* message, bool use_stderr, bool flush)
+int rlog::print_prefix_to_stream(rlog::severity severity, rlog::domain domain, std::FILE* stream)
 {
-    auto const stream = use_stderr ? stderr : stdout;
-
     switch (g_log_style)
     {
     case console_log_style::verbose:
@@ -39,15 +37,10 @@ void rlog::print_to_console(severity severity, rlog::domain domain, const char* 
         // [timestamp]     [thread id] [severity] [domain] [message]
         // 06.05.20 07:14:10 t000      INFO       NET      <the message being printed>\n
 
-        // timestamp and severity (always)
-        std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s %s " RLOG_COLOR_RESET "%s%-5s" RLOG_COLOR_RESET, timebuffer, tls_thread_name,
-                     severity.color_code, severity.value);
-
         auto domain_name = domain.value ? domain.value : "LOG";
-        std::fprintf(stream, " %s%-9s", domain.color_code, domain_name);
 
-        // message and newline (always)
-        std::fprintf(stream, RLOG_COLOR_RESET " %s" RLOG_COLOR_RESET "\n", message);
+        return std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s %s " RLOG_COLOR_RESET "%s%-7s " RLOG_COLOR_RESET " %s%-9s " RLOG_COLOR_RESET, timebuffer,
+                            tls_thread_name, severity.color_code, severity.value, domain.color_code, domain_name);
     }
     break;
     case console_log_style::brief:
@@ -63,16 +56,13 @@ void rlog::print_to_console(severity severity, rlog::domain domain, const char* 
         // 07:14:10 INFO [NET] <the message being printed>\n
 
         // timestamp and severity (always)
-        std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%-5s" RLOG_COLOR_RESET, timebuffer, severity.color_code, severity.value);
+        auto length
+            = std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%-5s " RLOG_COLOR_RESET, timebuffer, severity.color_code, severity.value);
 
-        if (domain.value != nullptr)
-        {
-            // domain, optional
-            std::fprintf(stream, " %s%s", domain.color_code, domain.value);
-        }
+        if (domain.value != nullptr) // domain, optional
+            length += std::fprintf(stream, "%s%s " RLOG_COLOR_RESET, domain.color_code, domain.value);
 
-        // message and newline (always)
-        std::fprintf(stream, RLOG_COLOR_RESET " %s" RLOG_COLOR_RESET "\n", message);
+        return length;
     }
     break;
     case console_log_style::briefer:
@@ -88,31 +78,21 @@ void rlog::print_to_console(severity severity, rlog::domain domain, const char* 
         // 07:14 I [NET] <the message being printed>\n
 
         // timestamp and severity (always)
-        std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%c" RLOG_COLOR_RESET, timebuffer, severity.color_code,
-                     severity.value[0] ? severity.value[0] : ' ');
+        auto length = std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%c " RLOG_COLOR_RESET, timebuffer, severity.color_code,
+                                   severity.value[0] ? severity.value[0] : ' ');
 
-        if (domain.value != nullptr)
-        {
-            // domain, optional
-            std::fprintf(stream, " %s%s", domain.color_code, domain.value);
-        }
+        if (domain.value != nullptr) // domain, optional
+            length += std::fprintf(stream, "%s%s" RLOG_COLOR_RESET, domain.color_code, domain.value);
 
-        // message and newline (always)
-        std::fprintf(stream, RLOG_COLOR_RESET " %s" RLOG_COLOR_RESET "\n", message);
+        return length;
     }
     break;
     case console_log_style::message_only:
-    {
-        // message and newline (always)
-        std::fprintf(stream, RLOG_COLOR_RESET "%s" RLOG_COLOR_RESET "\n", message);
-    }
-    break;
+        // intentionally left blank.
+        return 0;
     default:
         CC_UNREACHABLE("unsupported log style");
     }
-
-    if (flush)
-        std::fflush(stream);
 }
 
 void rlog::set_current_thread_name(const char* fmt, ...)

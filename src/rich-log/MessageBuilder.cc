@@ -30,5 +30,8 @@ MessageBuilder::~MessageBuilder()
 {
     // TODO: send message to logger
     // DEBUG: console for now
-    print_to_console(_severity, _domain, _msg.c_str(), _use_err_stream, true);
+    auto* const stream = _use_err_stream ? stderr : stdout;
+    print_prefix_to_stream(_severity, _domain, stream);
+    std::fprintf(stream, "%s\n", _msg.c_str());
+    std::fflush(stream);
 }

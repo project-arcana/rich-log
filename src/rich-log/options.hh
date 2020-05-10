@@ -8,7 +8,7 @@ struct severity
 {
     explicit constexpr severity(char const* v, char const* color = "") : value(v), color_code(color) {}
     char const* value;      ///< Name of the severity
-    char const* color_code; ///< ANSI color codes, default: empty
+    char const* color_code; ///< ANSI color codes
 
     static constexpr severity trace() { return severity{"TRACE", "\u001b[38;5;14m"}; }
     static constexpr severity info() { return severity{"INFO", "\u001b[38;5;241m"}; }
@@ -19,8 +19,8 @@ struct severity
 struct domain
 {
     explicit constexpr domain(char const* v, char const* color = "\u001b[38;5;244m") : value(v), color_code(color) {}
-    char const* value;      ///< Name of the domain, nullptr is valid
-    char const* color_code; ///< ANSI color codes, default: empty
+    char const* value;      ///< Name of the domain
+    char const* color_code; ///< ANSI color codes
 
     static constexpr domain unspecified() { return domain{nullptr, "\u001b[38;5;238m"}; }
 };
