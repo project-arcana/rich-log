@@ -18,35 +18,98 @@
 namespace
 {
 thread_local char tls_thread_name[32] = "";
+rlog::console_log_style g_log_style = rlog::console_log_style::verbose;
 }
 
 void rlog::print_to_console(severity severity, rlog::domain domain, const char* message, bool use_stderr, bool flush)
 {
-    // prepare timestamp
-    std::time_t const t = std::time(nullptr);
-    std::tm* const lt = std::localtime(&t);
-    char timebuffer[18];
-    timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S", lt)] = '\0';
-
-    // print
     auto const stream = use_stderr ? stderr : stdout;
 
-    // full log line
-    // [timestamp]     [thread id] [severity] [domain] [message]
-    // 06.05.20 07:14:10 t000      INFO       NET      <the message being printed>\n
-
-    // timestamp and severity (always)
-    std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s %s " RLOG_COLOR_RESET "%s%-7s " RLOG_COLOR_RESET, timebuffer, tls_thread_name, severity.color_code,
-                 severity.value);
-
-    if (domain.value != nullptr)
+    switch (g_log_style)
     {
-        // domain, optional
-        std::fprintf(stream, " %s%-9s", domain.color_code, domain.value);
-    }
+    case console_log_style::verbose:
+    {
+        // prepare timestamp
+        std::time_t const t = std::time(nullptr);
+        std::tm* const lt = std::localtime(&t);
+        char timebuffer[18];
+        timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S", lt)] = '\0';
 
-    // message and newline (always)
-    std::fprintf(stream, RLOG_COLOR_RESET " %s" RLOG_COLOR_RESET "\n", message);
+        // full log line
+        // [timestamp]     [thread id] [severity] [domain] [message]
+        // 06.05.20 07:14:10 t000      INFO       NET      <the message being printed>\n
+
+        // timestamp and severity (always)
+        std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s %s " RLOG_COLOR_RESET "%s%-5s" RLOG_COLOR_RESET, timebuffer, tls_thread_name,
+                     severity.color_code, severity.value);
+
+        auto domain_name = domain.value ? domain.value : "LOG";
+        std::fprintf(stream, " %s%-9s", domain.color_code, domain_name);
+
+        // message and newline (always)
+        std::fprintf(stream, RLOG_COLOR_RESET " %s" RLOG_COLOR_RESET "\n", message);
+    }
+    break;
+    case console_log_style::brief:
+    {
+        // prepare timestamp
+        std::time_t const t = std::time(nullptr);
+        std::tm* const lt = std::localtime(&t);
+        char timebuffer[9];
+        timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%H:%M:%S", lt)] = '\0';
+
+        // brief log line
+        // [timestamp] [severity] [domain] [message]
+        // 07:14:10 INFO [NET] <the message being printed>\n
+
+        // timestamp and severity (always)
+        std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%-5s" RLOG_COLOR_RESET, timebuffer, severity.color_code, severity.value);
+
+        if (domain.value != nullptr)
+        {
+            // domain, optional
+            std::fprintf(stream, " %s%s", domain.color_code, domain.value);
+        }
+
+        // message and newline (always)
+        std::fprintf(stream, RLOG_COLOR_RESET " %s" RLOG_COLOR_RESET "\n", message);
+    }
+    break;
+    case console_log_style::briefer:
+    {
+        // prepare timestamp
+        std::time_t const t = std::time(nullptr);
+        std::tm* const lt = std::localtime(&t);
+        char timebuffer[6];
+        timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%H:%M", lt)] = '\0';
+
+        // briefer log line
+        // [timestamp] [severity] [domain] [message]
+        // 07:14 I [NET] <the message being printed>\n
+
+        // timestamp and severity (always)
+        std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%c" RLOG_COLOR_RESET, timebuffer, severity.color_code,
+                     severity.value[0] ? severity.value[0] : ' ');
+
+        if (domain.value != nullptr)
+        {
+            // domain, optional
+            std::fprintf(stream, " %s%s", domain.color_code, domain.value);
+        }
+
+        // message and newline (always)
+        std::fprintf(stream, RLOG_COLOR_RESET " %s" RLOG_COLOR_RESET "\n", message);
+    }
+    break;
+    case console_log_style::message_only:
+    {
+        // message and newline (always)
+        std::fprintf(stream, RLOG_COLOR_RESET "%s" RLOG_COLOR_RESET "\n", message);
+    }
+    break;
+    default:
+        CC_UNREACHABLE("unsupported log style");
+    }
 
     if (flush)
         std::fflush(stream);
@@ -87,3 +150,5 @@ bool rlog::enable_win32_colors()
     return true;
 #endif
 }
+
+void rlog::set_console_log_style(rlog::console_log_style style) { g_log_style = style; }
