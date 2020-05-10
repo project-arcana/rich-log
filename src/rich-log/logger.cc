@@ -57,7 +57,7 @@ int rlog::print_prefix_to_stream(rlog::severity severity, rlog::domain domain, s
 
         // timestamp and severity (always)
         auto length
-            = std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%-5s " RLOG_COLOR_RESET, timebuffer, severity.color_code, severity.value);
+            = std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%s " RLOG_COLOR_RESET, timebuffer, severity.color_code, severity.value);
 
         if (domain.value != nullptr) // domain, optional
             length += std::fprintf(stream, "%s%s " RLOG_COLOR_RESET, domain.color_code, domain.value);
