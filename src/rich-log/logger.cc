@@ -20,7 +20,7 @@ namespace
 thread_local char tls_thread_name[32] = "";
 }
 
-void rlog::print_to_console(severity severity, rlog::domain domain, const char* message, bool use_stderr, bool flush)
+void rlog::print_prefix_to_stream(rlog::severity severity, rlog::domain domain, std::FILE* stream)
 {
     // prepare timestamp
     std::time_t const t = std::time(nullptr);
@@ -28,28 +28,13 @@ void rlog::print_to_console(severity severity, rlog::domain domain, const char* 
     char timebuffer[18];
     timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S", lt)] = '\0';
 
-    // print
-    auto const stream = use_stderr ? stderr : stdout;
-
     // full log line
     // [timestamp]     [thread id] [severity] [domain] [message]
     // 06.05.20 07:14:10 t000      INFO       NET      <the message being printed>\n
+    // the prefix is everything up to [message]
 
-    // timestamp and severity (always)
-    std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s %s " RLOG_COLOR_RESET "%s%-7s " RLOG_COLOR_RESET, timebuffer, tls_thread_name, severity.color_code,
-                 severity.value);
-
-    if (domain.value != nullptr)
-    {
-        // domain, optional
-        std::fprintf(stream, " %s%-9s", domain.color_code, domain.value);
-    }
-
-    // message and newline (always)
-    std::fprintf(stream, RLOG_COLOR_RESET " %s" RLOG_COLOR_RESET "\n", message);
-
-    if (flush)
-        std::fflush(stream);
+    std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s %s " RLOG_COLOR_RESET "%s%-7s " RLOG_COLOR_RESET " %s%-9s " RLOG_COLOR_RESET, timebuffer,
+                 tls_thread_name, severity.color_code, severity.value, domain.color_code, domain.value);
 }
 
 void rlog::set_current_thread_name(const char* fmt, ...)
