@@ -22,6 +22,6 @@ struct domain
     char const* value;      ///< Name of the domain
     char const* color_code; ///< ANSI color codes
 
-    static constexpr domain unspecified() { return domain{"LOG", "\u001b[38;5;238m"}; }
+    static constexpr domain unspecified() { return domain{nullptr, "\u001b[38;5;238m"}; }
 };
 }

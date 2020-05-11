@@ -18,23 +18,81 @@
 namespace
 {
 thread_local char tls_thread_name[32] = "";
+rlog::console_log_style g_log_style = rlog::console_log_style::verbose;
 }
 
-void rlog::print_prefix_to_stream(rlog::severity severity, rlog::domain domain, std::FILE* stream)
+int rlog::print_prefix_to_stream(rlog::severity severity, rlog::domain domain, std::FILE* stream)
 {
-    // prepare timestamp
-    std::time_t const t = std::time(nullptr);
-    std::tm* const lt = std::localtime(&t);
-    char timebuffer[18];
-    timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S", lt)] = '\0';
+    switch (g_log_style)
+    {
+    case console_log_style::verbose:
+    {
+        // prepare timestamp
+        std::time_t const t = std::time(nullptr);
+        std::tm* const lt = std::localtime(&t);
+        char timebuffer[18];
+        timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S", lt)] = '\0';
 
-    // full log line
-    // [timestamp]     [thread id] [severity] [domain] [message]
-    // 06.05.20 07:14:10 t000      INFO       NET      <the message being printed>\n
-    // the prefix is everything up to [message]
+        // full log line
+        // [timestamp]     [thread id] [severity] [domain] [message]
+        // 06.05.20 07:14:10 t000      INFO       NET      <the message being printed>\n
 
-    std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s %s " RLOG_COLOR_RESET "%s%-7s " RLOG_COLOR_RESET " %s%-9s " RLOG_COLOR_RESET, timebuffer,
-                 tls_thread_name, severity.color_code, severity.value, domain.color_code, domain.value);
+        auto domain_name = domain.value ? domain.value : "LOG";
+
+        return std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s %s " RLOG_COLOR_RESET "%s%-7s " RLOG_COLOR_RESET " %s%-9s " RLOG_COLOR_RESET, timebuffer,
+                            tls_thread_name, severity.color_code, severity.value, domain.color_code, domain_name);
+    }
+    break;
+    case console_log_style::brief:
+    {
+        // prepare timestamp
+        std::time_t const t = std::time(nullptr);
+        std::tm* const lt = std::localtime(&t);
+        char timebuffer[9];
+        timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%H:%M:%S", lt)] = '\0';
+
+        // brief log line
+        // [timestamp] [severity] [domain] [message]
+        // 07:14:10 INFO [NET] <the message being printed>\n
+
+        // timestamp and severity (always)
+        auto length
+            = std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%s " RLOG_COLOR_RESET, timebuffer, severity.color_code, severity.value);
+
+        if (domain.value != nullptr) // domain, optional
+            length += std::fprintf(stream, "%s%s " RLOG_COLOR_RESET, domain.color_code, domain.value);
+
+        return length;
+    }
+    break;
+    case console_log_style::briefer:
+    {
+        // prepare timestamp
+        std::time_t const t = std::time(nullptr);
+        std::tm* const lt = std::localtime(&t);
+        char timebuffer[6];
+        timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%H:%M", lt)] = '\0';
+
+        // briefer log line
+        // [timestamp] [severity] [domain] [message]
+        // 07:14 I [NET] <the message being printed>\n
+
+        // timestamp and severity (always)
+        auto length = std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%c " RLOG_COLOR_RESET, timebuffer, severity.color_code,
+                                   severity.value[0] ? severity.value[0] : ' ');
+
+        if (domain.value != nullptr) // domain, optional
+            length += std::fprintf(stream, "%s%s" RLOG_COLOR_RESET, domain.color_code, domain.value);
+
+        return length;
+    }
+    break;
+    case console_log_style::message_only:
+        // intentionally left blank.
+        return 0;
+    default:
+        CC_UNREACHABLE("unsupported log style");
+    }
 }
 
 void rlog::set_current_thread_name(const char* fmt, ...)
@@ -72,3 +130,5 @@ bool rlog::enable_win32_colors()
     return true;
 #endif
 }
+
+void rlog::set_console_log_style(rlog::console_log_style style) { g_log_style = style; }
