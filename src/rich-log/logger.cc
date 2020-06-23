@@ -82,7 +82,7 @@ int rlog::print_prefix_to_stream(rlog::severity severity, rlog::domain domain, s
                                    severity.value[0] ? severity.value[0] : ' ');
 
         if (domain.value != nullptr) // domain, optional
-            length += std::fprintf(stream, "%s%s" RLOG_COLOR_RESET, domain.color_code, domain.value);
+            length += std::fprintf(stream, "%s%s " RLOG_COLOR_RESET, domain.color_code, domain.value);
 
         return length;
     }
