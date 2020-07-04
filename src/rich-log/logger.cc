@@ -19,6 +19,19 @@ namespace
 {
 thread_local char tls_thread_name[32] = "";
 rlog::console_log_style g_log_style = rlog::console_log_style::verbose;
+
+CC_FORCE_INLINE void write_timebuffer(char* timebuffer, size_t size, char const* format)
+{
+    std::time_t const t = std::time(nullptr);
+#ifdef CC_OS_WINDOWS
+    std::tm lt_stack;
+    ::localtime_s(&lt_stack, &t);
+    std::tm* const lt = &lt_stack;
+#else
+    std::tm* const lt = std::localtime(&t);
+#endif
+    timebuffer[std::strftime(timebuffer, size, format, lt)] = '\0';
+}
 }
 
 int rlog::print_prefix_to_stream(rlog::severity severity, rlog::domain domain, std::FILE* stream)
@@ -28,28 +41,37 @@ int rlog::print_prefix_to_stream(rlog::severity severity, rlog::domain domain, s
     case console_log_style::verbose:
     {
         // prepare timestamp
-        std::time_t const t = std::time(nullptr);
-        std::tm* const lt = std::localtime(&t);
         char timebuffer[18];
-        timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S", lt)] = '\0';
+        write_timebuffer(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S");
 
         // full log line
         // [timestamp]     [thread id] [severity] [domain] [message]
         // 06.05.20 07:14:10 t000      INFO       NET      <the message being printed>\n
 
         auto domain_name = domain.value ? domain.value : "LOG";
-
         return std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s %s " RLOG_COLOR_RESET "%s%-7s " RLOG_COLOR_RESET " %s%-9s " RLOG_COLOR_RESET, timebuffer,
                             tls_thread_name, severity.color_code, severity.value, domain.color_code, domain_name);
+    }
+    break;
+    case console_log_style::verbose_no_color:
+    {
+        // prepare timestamp
+        char timebuffer[18];
+        write_timebuffer(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S");
+
+        // full log line
+        // [timestamp]     [thread id] [severity] [domain] [message]
+        // 06.05.20 07:14:10 t000      INFO       NET      <the message being printed>\n
+
+        auto domain_name = domain.value ? domain.value : "LOG";
+        return std::fprintf(stream, "%s %s %-7s  %-9s ", timebuffer, tls_thread_name, severity.value, domain_name);
     }
     break;
     case console_log_style::brief:
     {
         // prepare timestamp
-        std::time_t const t = std::time(nullptr);
-        std::tm* const lt = std::localtime(&t);
         char timebuffer[9];
-        timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%H:%M:%S", lt)] = '\0';
+        write_timebuffer(timebuffer, sizeof(timebuffer), "%H:%M:%S");
 
         // brief log line
         // [timestamp] [severity] [domain] [message]
@@ -68,10 +90,8 @@ int rlog::print_prefix_to_stream(rlog::severity severity, rlog::domain domain, s
     case console_log_style::briefer:
     {
         // prepare timestamp
-        std::time_t const t = std::time(nullptr);
-        std::tm* const lt = std::localtime(&t);
         char timebuffer[6];
-        timebuffer[std::strftime(timebuffer, sizeof(timebuffer), "%H:%M", lt)] = '\0';
+        write_timebuffer(timebuffer, sizeof(timebuffer), "%H:%M");
 
         // briefer log line
         // [timestamp] [severity] [domain] [message]
