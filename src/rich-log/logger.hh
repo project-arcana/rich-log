@@ -25,6 +25,10 @@ enum class console_log_style
     // [message]
     // <the message being printed>\n
     message_only,
+
+    // like verbose, but without color. useful if running inside a terminal
+    // that performs poorly with color codes, like qt creators builtin terminal
+    verbose_no_color,
 };
 
 /// prints a formatted, colored prefix to the specified stream, of the form
