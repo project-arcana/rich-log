@@ -1,9 +1,6 @@
 #pragma once
 
-#include <clean-core/macros.hh>
-
-#include <rich-log/MessageBuilder.hh>
-#include <rich-log/location.hh>
+#include <rich-log/detail/log_impl.hh>
 
 namespace rlog
 {
@@ -44,13 +41,6 @@ constexpr void expression_functor(MessageBuilder& builder)
 #define LOG_EXPR(expr, ...) RICH_LOG_EXPR(expr, ##__VA_ARGS__)
 
 #endif
-
-#define RICH_LOG_IMPL(_functor_)                                                            \
-    [] {                                                                                    \
-        static constexpr ::rlog::location _rlog_loc = {CC_PRETTY_FUNC, __FILE__, __LINE__}; \
-        return ::rlog::MessageBuilder(&_rlog_loc, _functor_);                               \
-    }()
-
 
 #define RICH_LOG RICH_LOG_IMPL(nullptr)
 
