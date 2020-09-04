@@ -43,5 +43,6 @@ void set_current_thread_name(char const* fmt, ...) CC_PRINTF_FUNC(1, 2);
 /// changes the way print_to_console formats its output
 void set_console_log_style(console_log_style style);
 
-[[deprecated("moved to cc/native/win32_util.hh")]] bool enable_win32_colors();
+/// enables ANSI Escape sequences in Windows conhost.exe and cmd.exe
+bool enable_win32_colors();
 }

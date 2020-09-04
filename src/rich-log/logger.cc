@@ -8,7 +8,9 @@
 #include <clean-core/macros.hh>
 #include <clean-core/utility.hh>
 
-#include <clean-core/native/win32_util.hh>
+#ifdef CC_OS_WINDOWS
+#include <clean-core/native/win32_sanitized.hh>
+#endif
 
 #define RLOG_COLOR_TIMESTAMP "\u001b[38;5;37m"
 #define RLOG_COLOR_RESET "\u001b[0m"
@@ -130,4 +132,23 @@ void rlog::set_current_thread_name(const char* fmt, ...)
 
 void rlog::set_console_log_style(rlog::console_log_style style) { g_log_style = style; }
 
-bool rlog::enable_win32_colors() { return cc::win32_enable_console_colors; }
+bool rlog::enable_win32_colors()
+{
+#ifdef CC_OS_WINDOWS
+    ::HANDLE const console_handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
+    if (console_handle == INVALID_HANDLE_VALUE)
+        return false;
+
+    ::DWORD prev_mode;
+    if (!::GetConsoleMode(console_handle, &prev_mode))
+        return false;
+
+    prev_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!::SetConsoleMode(console_handle, prev_mode))
+        return false;
+
+    return true;
+#else
+    return true;
+#endif
+}
