@@ -6,6 +6,7 @@
 #include <clean-core/string.hh>
 
 #include <rich-log/fwd.hh>
+#include <rich-log/location.hh>
 #include <rich-log/options.hh>
 
 #include <reflector/to_string.hh>
@@ -21,7 +22,7 @@ public:
     constexpr void set_domain(domain const& d) { _domain = d; }
     constexpr void set_separator(char const* s) { _sep = s; }
     constexpr void set_use_error_stream(bool enabled) { _use_err_stream = enabled; }
-    void set_location(location const& loc) { _location = &loc; }
+    void set_location(location const& loc) { _location = loc; }
 
     // object log
 public:
@@ -36,7 +37,7 @@ public:
 public:
     MessageBuilder() = default;
 
-    MessageBuilder(location const* location, cc::function_ptr<void(MessageBuilder&)> functor = nullptr) : _location(location)
+    MessageBuilder(location const& location, cc::function_ptr<void(MessageBuilder&)> functor = nullptr) : _location(location)
     {
         if (functor)
             functor(*this);
@@ -89,7 +90,7 @@ private:
     void append_formatted(cc::string_view fmt, cc::span<cc::string const> args);
 
 private:
-    location const* _location = nullptr;
+    location _location = {};
     domain _domain = domain::unspecified();
     severity _severity = severity::info();
     char const* _sep = " ";
