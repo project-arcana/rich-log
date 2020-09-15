@@ -130,6 +130,8 @@ void rlog::set_current_thread_name(const char* fmt, ...)
     }
 }
 
+void rlog::set_console_log_style(rlog::console_log_style style) { g_log_style = style; }
+
 bool rlog::enable_win32_colors()
 {
 #ifdef CC_OS_WINDOWS
@@ -150,5 +152,3 @@ bool rlog::enable_win32_colors()
     return true;
 #endif
 }
-
-void rlog::set_console_log_style(rlog::console_log_style style) { g_log_style = style; }

@@ -40,10 +40,9 @@ int print_prefix_to_stream(severity severity, domain domain, std::FILE* stream =
 /// pass nullptr to un-set
 void set_current_thread_name(char const* fmt, ...) CC_PRINTF_FUNC(1, 2);
 
-/// enables ANSI Escape sequences in Windows conhost.exe and cmd.exe
-/// returns true on success
-bool enable_win32_colors();
-
 /// changes the way print_to_console formats its output
 void set_console_log_style(console_log_style style);
+
+/// enables ANSI Escape sequences in Windows conhost.exe and cmd.exe
+bool enable_win32_colors();
 }
