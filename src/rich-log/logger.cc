@@ -10,6 +10,13 @@
 
 #ifdef CC_OS_WINDOWS
 #include <clean-core/native/win32_sanitized.hh>
+
+// this macro is only defined with SDK versions beyond 10586
+// (the call can of course still succeed depending on the version of the executing system)
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
+
 #endif
 
 #define RLOG_COLOR_TIMESTAMP "\u001b[38;5;37m"
