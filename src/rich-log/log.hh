@@ -6,8 +6,8 @@ namespace rlog
 {
 constexpr void debug_functor(MessageBuilder& builder)
 {
-    //
     builder.set_severity(severity::debug());
+    builder.set_must_be_whitelisted(true);
 }
 
 constexpr void warning_functor(MessageBuilder& builder)
@@ -34,9 +34,10 @@ constexpr void expression_functor(MessageBuilder& builder)
 #define LOG RICH_LOG_IMPL(nullptr)
 
 #define LOG_INFO RICH_LOG_IMPL(nullptr)
-#define LOG_DEBUG RICH_LOG_IMPL(rlog::debug_functor)
 #define LOG_WARN RICH_LOG_IMPL(rlog::warning_functor)
 #define LOG_ERROR RICH_LOG_IMPL(rlog::error_functor)
+#define LOG_DEBUG RICH_LOG_IMPL(rlog::debug_functor)
+#define LOG_DEBUG_DOMAIN(DomainName) RICH_LOG_DEBUG_DOMAIN(DomainName)
 
 #define LOG_EXPR(expr, ...) RICH_LOG_EXPR(expr, ##__VA_ARGS__)
 
@@ -45,8 +46,13 @@ constexpr void expression_functor(MessageBuilder& builder)
 #define RICH_LOG RICH_LOG_IMPL(nullptr)
 
 #define RICH_LOG_INFO RICH_LOG_IMPL(nullptr)
-#define RICH_LOG_DEBUG RICH_LOG_IMPL(rlog::debug_functor)
 #define RICH_LOG_WARN RICH_LOG_IMPL(rlog::warning_functor)
 #define RICH_LOG_ERROR RICH_LOG_IMPL(rlog::error_functor)
+#define RICH_LOG_DEBUG RICH_LOG_IMPL(rlog::debug_functor)
+#define RICH_LOG_DEBUG_DOMAIN(DomainName)               \
+    RICH_LOG_IMPL([](::rlog::MessageBuilder& builder) { \
+        ::rlog::debug_functor(builder);                 \
+        builder.set_domain(::rlog::domain(DomainName)); \
+    })
 
 #define RICH_LOG_EXPR(expr, ...) RICH_LOG_IMPL(rlog::expression_functor)(##__VA_ARGS__) << #expr " = " << (expr)

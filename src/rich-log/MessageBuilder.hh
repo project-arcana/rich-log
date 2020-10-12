@@ -18,10 +18,11 @@ class MessageBuilder
 {
     // options
 public:
-    constexpr void set_severity(severity const& s) { _severity = s; }
-    constexpr void set_domain(domain const& d) { _domain = d; }
-    constexpr void set_separator(char const* s) { _sep = s; }
-    constexpr void set_use_error_stream(bool enabled) { _use_err_stream = enabled; }
+    void set_severity(severity const& s) { _severity = s; }
+    void set_domain(domain const& d) { _domain = d; }
+    void set_separator(char const* s) { _sep = s; }
+    void set_use_error_stream(bool enabled) { _use_err_stream = enabled; }
+    void set_must_be_whitelisted(bool enabled) { _must_be_whitelisted = enabled; }
     void set_location(location const& loc) { _location = loc; }
 
     // object log
@@ -99,5 +100,6 @@ private:
     cc::string _msg;
 
     bool _use_err_stream = false;
+    bool _must_be_whitelisted = false;
 };
 }

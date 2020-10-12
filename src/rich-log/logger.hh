@@ -3,6 +3,8 @@
 #include <cstdio>
 
 #include <clean-core/macros.hh>
+#include <clean-core/string_view.hh>
+#include <clean-core/unique_function.hh>
 
 #include <rich-log/options.hh>
 
@@ -45,4 +47,8 @@ void set_console_log_style(console_log_style style);
 
 /// enables ANSI Escape sequences in Windows conhost.exe and cmd.exe
 bool enable_win32_colors();
+
+/// adds a global whitelist filter function
+/// if any of these returns true, then messages that must be whitelisted get printed
+void add_whitelist_filter(cc::unique_function<bool(cc::string_view domain, cc::string_view message)> filter);
 }
