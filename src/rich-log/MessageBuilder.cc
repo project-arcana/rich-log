@@ -1,10 +1,19 @@
 #include "MessageBuilder.hh"
 
 #include <clean-core/assert.hh>
+#include <clean-core/vector.hh>
 
+#include <rich-log/experimental.hh>
 #include <rich-log/logger.hh>
 
 using namespace rlog;
+
+static cc::unique_function<bool(cc::string_view domain, cc::string_view msg)> sWhitelistFilter;
+
+void rlog::experimental::set_whitelist_filter(cc::unique_function<bool(cc::string_view, cc::string_view)> filter)
+{
+    sWhitelistFilter = cc::move(filter);
+}
 
 void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string const> args)
 {
@@ -28,6 +37,10 @@ void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string c
 
 MessageBuilder::~MessageBuilder()
 {
+    if (_must_be_whitelisted)
+        if (!sWhitelistFilter(_domain.value ? _domain.value : "", _msg))
+            return; // was not whitelisted
+
     // TODO: send message to logger
     // DEBUG: console for now
     auto* const stream = _use_err_stream ? stderr : stdout;
