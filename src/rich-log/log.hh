@@ -4,25 +4,25 @@
 
 namespace rlog
 {
-constexpr void debug_functor(MessageBuilder& builder)
+inline void debug_functor(MessageBuilder& builder)
 {
     builder.set_severity(severity::debug());
     builder.set_must_be_whitelisted(true);
 }
 
-constexpr void warning_functor(MessageBuilder& builder)
+inline void warning_functor(MessageBuilder& builder)
 {
     builder.set_severity(severity::warning());
     builder.set_use_error_stream(true);
 }
 
-constexpr void error_functor(MessageBuilder& builder)
+inline void error_functor(MessageBuilder& builder)
 {
     builder.set_severity(severity::error());
     builder.set_use_error_stream(true);
 }
 
-constexpr void expression_functor(MessageBuilder& builder)
+inline void expression_functor(MessageBuilder& builder)
 {
     //
     builder.set_separator("");
