@@ -38,7 +38,7 @@ void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string c
 MessageBuilder::~MessageBuilder()
 {
     if (_must_be_whitelisted)
-        if (!sWhitelistFilter(_domain.value ? _domain.value : "", _msg))
+        if (!sWhitelistFilter || !sWhitelistFilter(_domain.value ? _domain.value : "", _msg))
             return; // was not whitelisted
 
     // TODO: send message to logger
