@@ -1,5 +1,8 @@
 #include "MessageBuilder.hh"
 
+#include <cstdarg>
+#include <cstdio>
+
 #include <clean-core/assert.hh>
 #include <clean-core/vector.hh>
 
@@ -13,6 +16,20 @@ static cc::unique_function<bool(cc::string_view domain, cc::string_view msg)> sW
 void rlog::experimental::set_whitelist_filter(cc::unique_function<bool(cc::string_view, cc::string_view)> filter)
 {
     sWhitelistFilter = cc::move(filter);
+}
+
+void MessageBuilder::printf(const char* fmt, ...)
+{
+    char buf[1024];
+
+    std::va_list args;
+    va_start(args, fmt);
+    int const num_written = std::vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+
+    CC_ASSERT(num_written < int(sizeof(buf)) && "MessageBuilder::printf truncated");
+
+    append({buf, size_t(num_written)});
 }
 
 void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string const> args)
