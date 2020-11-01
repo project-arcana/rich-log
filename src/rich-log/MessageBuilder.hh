@@ -56,7 +56,7 @@ public:
         }
     }
 
-    void printf(char const* fmt, ...) CC_PRINTF_FUNC(2, 3);
+    void printf(char const* fmt, ...) CC_PRINTF_FUNC(2);
 
     MessageBuilder& operator()() { return *this; }
 
