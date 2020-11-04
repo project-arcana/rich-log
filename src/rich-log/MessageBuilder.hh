@@ -56,6 +56,8 @@ public:
         }
     }
 
+    void printf(char const* fmt, ...) CC_PRINTF_FUNC(2);
+
     MessageBuilder& operator()() { return *this; }
 
     template <class... Args>

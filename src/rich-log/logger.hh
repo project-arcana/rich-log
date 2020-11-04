@@ -38,7 +38,7 @@ int print_prefix_to_stream(severity severity, domain domain, std::FILE* stream =
 
 /// sets the name for the calling thread, as it appears in the log prefix, using printf syntax
 /// pass nullptr to un-set
-void set_current_thread_name(char const* fmt, ...) CC_PRINTF_FUNC(1, 2);
+void set_current_thread_name(char const* fmt, ...) CC_PRINTF_FUNC(1);
 
 /// changes the way print_to_console formats its output
 void set_console_log_style(console_log_style style);
