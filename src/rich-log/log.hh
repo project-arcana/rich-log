@@ -36,6 +36,8 @@ inline void expression_functor(MessageBuilder& builder)
 #define LOG_INFO RICH_LOG_IMPL(nullptr)
 #define LOG_WARN RICH_LOG_IMPL(rlog::warning_functor)
 #define LOG_ERROR RICH_LOG_IMPL(rlog::error_functor)
+
+// NOTE: LOG_DEBUG is currently opt-in and needs a whitelist filter (see experimental.hh)
 #define LOG_DEBUG RICH_LOG_IMPL(rlog::debug_functor)
 #define LOG_DEBUG_DOMAIN(DomainName) RICH_LOG_DEBUG_DOMAIN(DomainName)
 
