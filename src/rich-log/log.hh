@@ -10,6 +10,12 @@ inline void debug_functor(MessageBuilder& builder)
     builder.set_must_be_whitelisted(true);
 }
 
+inline void trace_functor(MessageBuilder& builder)
+{
+    builder.set_severity(severity::trace());
+    //
+}
+
 inline void warning_functor(MessageBuilder& builder)
 {
     builder.set_severity(severity::warning());
@@ -35,6 +41,7 @@ inline void expression_functor(MessageBuilder& builder)
 
 #define LOG_INFO RICH_LOG_IMPL(nullptr)
 #define LOG_WARN RICH_LOG_IMPL(rlog::warning_functor)
+#define LOG_TRACE RICH_LOG_IMPL(rlog::trace_functor)
 #define LOG_ERROR RICH_LOG_IMPL(rlog::error_functor)
 #define LOG_DEBUG RICH_LOG_IMPL(rlog::debug_functor)
 #define LOG_DEBUG_DOMAIN(DomainName) RICH_LOG_DEBUG_DOMAIN(DomainName)
@@ -47,6 +54,7 @@ inline void expression_functor(MessageBuilder& builder)
 
 #define RICH_LOG_INFO RICH_LOG_IMPL(nullptr)
 #define RICH_LOG_WARN RICH_LOG_IMPL(rlog::warning_functor)
+#define RICH_LOG_TRACE RICH_LOG_IMPL(rlog::trace_functor)
 #define RICH_LOG_ERROR RICH_LOG_IMPL(rlog::error_functor)
 #define RICH_LOG_DEBUG RICH_LOG_IMPL(rlog::debug_functor)
 #define RICH_LOG_DEBUG_DOMAIN(DomainName)               \
