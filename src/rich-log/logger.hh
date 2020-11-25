@@ -5,6 +5,7 @@
 #include <clean-core/macros.hh>
 
 #include <rich-log/options.hh>
+#include <rich-log/location.hh>
 
 namespace rlog
 {
@@ -29,12 +30,15 @@ enum class console_log_style
     // like verbose, but without color. useful if running inside a terminal
     // that performs poorly with color codes, like qt creators builtin terminal
     verbose_no_color,
+
+    // like verbose, but also including filename:line for the log location
+    verbose_with_location
 };
 
 /// prints a formatted, colored prefix to the specified stream, of the form
 /// (or slightly different depending on log style)
 /// returns length of prefix
-int print_prefix_to_stream(severity severity, domain domain, std::FILE* stream = stdout);
+int print_prefix_to_stream(location const& location, severity severity, domain domain, std::FILE* stream = stdout);
 
 /// sets the name for the calling thread, as it appears in the log prefix, using printf syntax
 /// pass nullptr to un-set

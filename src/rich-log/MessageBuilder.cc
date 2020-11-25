@@ -61,7 +61,7 @@ MessageBuilder::~MessageBuilder()
     // TODO: send message to logger
     // DEBUG: console for now
     auto* const stream = _use_err_stream ? stderr : stdout;
-    print_prefix_to_stream(_severity, _domain, stream);
+    print_prefix_to_stream(_location, _severity, _domain, stream);
     std::fprintf(stream, "%s\n", _msg.c_str());
     std::fflush(stream);
 }

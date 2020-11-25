@@ -41,10 +41,15 @@ CC_FORCE_INLINE void write_timebuffer(char* timebuffer, size_t size, char const*
 }
 }
 
-int rlog::print_prefix_to_stream(rlog::severity severity, rlog::domain domain, std::FILE* stream)
+int rlog::print_prefix_to_stream(const location& location, rlog::severity severity, rlog::domain domain, std::FILE* stream)
 {
+    (void)location; // unused
+
     switch (g_log_style)
     {
+    case console_log_style::verbose_with_location:
+        std::fprintf(stream, "         %s:%d  (%s):\n", location.file, location.line, location.function);
+        // fall through
     case console_log_style::verbose:
     {
         // prepare timestamp
