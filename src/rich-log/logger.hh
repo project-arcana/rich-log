@@ -4,8 +4,8 @@
 
 #include <clean-core/macros.hh>
 
-#include <rich-log/options.hh>
 #include <rich-log/location.hh>
+#include <rich-log/options.hh>
 
 namespace rlog
 {

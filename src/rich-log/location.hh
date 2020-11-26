@@ -13,5 +13,6 @@ struct location
     int line;
 };
 
-#define RLOG_LOCATION() ::rlog::location{CC_PRETTY_FUNC, __FILE__, __LINE__}
+#define RLOG_LOCATION() \
+    ::rlog::location { CC_PRETTY_FUNC, __FILE__, __LINE__ }
 }
