@@ -4,6 +4,7 @@
 
 #include <clean-core/macros.hh>
 
+#include <rich-log/detail/api.hh>
 #include <rich-log/location.hh>
 #include <rich-log/options.hh>
 
@@ -38,15 +39,15 @@ enum class console_log_style
 /// prints a formatted, colored prefix to the specified stream, of the form
 /// (or slightly different depending on log style)
 /// returns length of prefix
-int print_prefix_to_stream(location const& location, severity severity, domain domain, std::FILE* stream = stdout);
+RLOG_API int print_prefix_to_stream(location const& location, severity severity, domain domain, std::FILE* stream = stdout);
 
 /// sets the name for the calling thread, as it appears in the log prefix, using printf syntax
 /// pass nullptr to un-set
-void set_current_thread_name(char const* fmt, ...) CC_PRINTF_FUNC(1);
+RLOG_API void set_current_thread_name(char const* fmt, ...) CC_PRINTF_FUNC(1);
 
 /// changes the way print_to_console formats its output
-void set_console_log_style(console_log_style style);
+RLOG_API void set_console_log_style(console_log_style style);
 
 /// enables ANSI Escape sequences in Windows conhost.exe and cmd.exe
-bool enable_win32_colors();
+RLOG_API bool enable_win32_colors();
 }
