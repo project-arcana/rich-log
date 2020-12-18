@@ -5,16 +5,17 @@
 #include <clean-core/span.hh>
 #include <clean-core/string.hh>
 
+#include <reflector/to_string.hh>
+
+#include <rich-log/detail/api.hh>
 #include <rich-log/fwd.hh>
 #include <rich-log/location.hh>
 #include <rich-log/options.hh>
 
-#include <reflector/to_string.hh>
-
 namespace rlog
 {
 // TODO: get a big temporary buffer, write the message into the buffer, then copy into actual msg
-class MessageBuilder
+class RLOG_API MessageBuilder
 {
     // options
 public:
