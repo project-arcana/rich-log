@@ -49,6 +49,15 @@ void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string c
             _msg += fmt[i];
         }
     }
+
+#ifdef CC_ENABLE_ASSERTIONS
+    if (arg_i != args.size())
+    {
+        std::fprintf(stderr, "[rich-log] provided %zu arguments for just %zu {} escape sequences\n    in log from %s:%d    (function %s)\n",
+                     args.size(), arg_i, this->_location.file, this->_location.line, this->_location.function);
+    }
+#endif
+
     CC_ASSERT(arg_i == args.size() && "less escape sequences than provided arguments");
 }
 
@@ -61,7 +70,7 @@ MessageBuilder::~MessageBuilder()
     // TODO: send message to logger
     // DEBUG: console for now
     auto* const stream = _use_err_stream ? stderr : stdout;
-    print_prefix_to_stream(_severity, _domain, stream);
+    print_prefix_to_stream(_location, _severity, _domain, stream);
     std::fprintf(stream, "%s\n", _msg.c_str());
     std::fflush(stream);
 }
