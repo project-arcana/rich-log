@@ -37,13 +37,16 @@ CC_FORCE_INLINE void write_timebuffer(char* timebuffer, size_t size, char const*
 #else
     std::tm* const lt = std::localtime(&t);
 #endif
-    timebuffer[std::strftime(timebuffer, size, format, lt)] = '\0';
+
+    std::strftime(timebuffer, size, format, lt);
 }
 }
 
 int rlog::print_prefix_to_stream(const location& location, rlog::severity severity, rlog::domain domain, std::FILE* stream)
 {
     (void)location; // unused
+
+    char timebuffer[64] = "";
 
     switch (g_log_style)
     {
@@ -53,7 +56,6 @@ int rlog::print_prefix_to_stream(const location& location, rlog::severity severi
     case console_log_style::verbose:
     {
         // prepare timestamp
-        char timebuffer[18];
         write_timebuffer(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S");
 
         // full log line
@@ -68,7 +70,6 @@ int rlog::print_prefix_to_stream(const location& location, rlog::severity severi
     case console_log_style::verbose_no_color:
     {
         // prepare timestamp
-        char timebuffer[18];
         write_timebuffer(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S");
 
         // full log line
@@ -82,7 +83,6 @@ int rlog::print_prefix_to_stream(const location& location, rlog::severity severi
     case console_log_style::brief:
     {
         // prepare timestamp
-        char timebuffer[9];
         write_timebuffer(timebuffer, sizeof(timebuffer), "%H:%M:%S");
 
         // brief log line
@@ -102,7 +102,6 @@ int rlog::print_prefix_to_stream(const location& location, rlog::severity severi
     case console_log_style::briefer:
     {
         // prepare timestamp
-        char timebuffer[6];
         write_timebuffer(timebuffer, sizeof(timebuffer), "%H:%M");
 
         // briefer log line
