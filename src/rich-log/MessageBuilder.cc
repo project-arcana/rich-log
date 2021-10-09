@@ -6,8 +6,9 @@
 #include <clean-core/assert.hh>
 #include <clean-core/vector.hh>
 
+#include <rich-log/LoggerBase.hh>
+#include <rich-log/StdOutLogger.hh>
 #include <rich-log/experimental.hh>
-#include <rich-log/logger.hh>
 
 using namespace rlog;
 
@@ -64,13 +65,15 @@ void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string c
 MessageBuilder::~MessageBuilder()
 {
     if (_must_be_whitelisted)
-        if (!sWhitelistFilter || !sWhitelistFilter(_domain.value ? _domain.value : "", _msg))
+        if (!sWhitelistFilter || !sWhitelistFilter(_domain.name ? _domain.name : "", _msg))
             return; // was not whitelisted
 
-    // TODO: send message to logger
-    // DEBUG: console for now
-    auto* const stream = _use_err_stream ? stderr : stdout;
-    print_prefix_to_stream(_location, _severity, _domain, stream);
-    std::fprintf(stream, "%s\n", _msg.c_str());
-    std::fflush(stream);
+    auto const msgParams = rlog::message_params{_location, _severity, _domain};
+    auto const numLoggers = rlog::broadcastMessage(msgParams, _msg.c_str());
+
+    if (numLoggers == 0)
+    {
+        // fall back to stdout logger
+        logMessageToStdOut(console_log_style::verbose, msgParams, _msg.c_str());
+    }
 }

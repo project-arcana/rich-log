@@ -1,12 +1,6 @@
 #pragma once
 
-#include <cstdio>
-
-#include <clean-core/macros.hh>
-
-#include <rich-log/detail/api.hh>
-#include <rich-log/location.hh>
-#include <rich-log/options.hh>
+#include <rich-log/LoggerBase.hh>
 
 namespace rlog
 {
@@ -36,18 +30,25 @@ enum class console_log_style
     verbose_with_location
 };
 
-/// prints a formatted, colored prefix to the specified stream, of the form
-/// (or slightly different depending on log style)
-/// returns length of prefix
-RLOG_API int print_prefix_to_stream(location const& location, severity severity, domain domain, std::FILE* stream = stdout);
+class RLOG_API StdOutLogger final : public LoggerBase
+{
+public:
+    explicit StdOutLogger(console_log_style style);
 
-/// sets the name for the calling thread, as it appears in the log prefix, using printf syntax
+    void log(message_params const& params, char const* msg) override;
+
+    void setLogStyle(console_log_style style) { mLogStyle = style; }
+
+private:
+    console_log_style mLogStyle = console_log_style::verbose;
+};
+
+RLOG_API void logMessageToStdOut(console_log_style style, message_params const& params, char const* msg);
+
+/// sets the name for the calling thread, as it appears in the stdout logger prefix, using printf syntax
 /// pass nullptr to un-set
-RLOG_API void set_current_thread_name(char const* fmt, ...) CC_PRINTF_FUNC(1);
-
-/// changes the way print_to_console formats its output
-RLOG_API void set_console_log_style(console_log_style style);
+RLOG_API void setCurrentThreadName(const char* fmt, ...) CC_PRINTF_FUNC(1);
 
 /// enables ANSI Escape sequences in Windows conhost.exe and cmd.exe
-RLOG_API bool enable_win32_colors();
+RLOG_API bool enableWin32ConsoleColors();
 }

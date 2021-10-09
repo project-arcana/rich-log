@@ -9,7 +9,6 @@
 
 #include <rich-log/detail/api.hh>
 #include <rich-log/fwd.hh>
-#include <rich-log/location.hh>
 #include <rich-log/options.hh>
 
 namespace rlog
@@ -19,10 +18,9 @@ class RLOG_API MessageBuilder
 {
     // options
 public:
-    void set_severity(severity const& s) { _severity = s; }
+    void set_severity(severity s) { _severity = s; }
     void set_domain(domain const& d) { _domain = d; }
     void set_separator(char const* s) { _sep = s; }
-    void set_use_error_stream(bool enabled) { _use_err_stream = enabled; }
     void set_must_be_whitelisted(bool enabled) { _must_be_whitelisted = enabled; }
     void set_location(location const& loc) { _location = loc; }
 
@@ -96,13 +94,12 @@ private:
 private:
     location _location = {};
     domain _domain = domain::unspecified();
-    severity _severity = severity::info();
+    severity _severity = severity::info;
     char const* _sep = " ";
 
     // TODO: some cleverly pooled buffer structure
     cc::string _msg;
 
-    bool _use_err_stream = false;
     bool _must_be_whitelisted = false;
 };
 }

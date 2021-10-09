@@ -6,33 +6,17 @@ namespace rlog
 {
 inline void debug_functor(MessageBuilder& builder)
 {
-    builder.set_severity(severity::debug());
+    builder.set_severity(severity::debug);
     builder.set_must_be_whitelisted(true);
 }
 
-inline void trace_functor(MessageBuilder& builder)
-{
-    builder.set_severity(severity::trace());
-    //
-}
+inline void trace_functor(MessageBuilder& builder) { builder.set_severity(severity::trace); }
 
-inline void warning_functor(MessageBuilder& builder)
-{
-    builder.set_severity(severity::warning());
-    builder.set_use_error_stream(true);
-}
+inline void warning_functor(MessageBuilder& builder) { builder.set_severity(severity::warning); }
 
-inline void error_functor(MessageBuilder& builder)
-{
-    builder.set_severity(severity::error());
-    builder.set_use_error_stream(true);
-}
+inline void error_functor(MessageBuilder& builder) { builder.set_severity(severity::error); }
 
-inline void expression_functor(MessageBuilder& builder)
-{
-    //
-    builder.set_separator("");
-}
+inline void expression_functor(MessageBuilder& builder) { builder.set_separator(""); }
 }
 
 #ifndef RICH_LOG_FORCE_MACRO_PREFIX
@@ -57,10 +41,12 @@ inline void expression_functor(MessageBuilder& builder)
 #define RICH_LOG_TRACE RICH_LOG_IMPL(rlog::trace_functor)
 #define RICH_LOG_ERROR RICH_LOG_IMPL(rlog::error_functor)
 #define RICH_LOG_DEBUG RICH_LOG_IMPL(rlog::debug_functor)
-#define RICH_LOG_DEBUG_DOMAIN(DomainName)               \
-    RICH_LOG_IMPL([](::rlog::MessageBuilder& builder) { \
-        ::rlog::debug_functor(builder);                 \
-        builder.set_domain(::rlog::domain(DomainName)); \
-    })
+#define RICH_LOG_DEBUG_DOMAIN(DomainName)                   \
+    RICH_LOG_IMPL(                                          \
+        [](::rlog::MessageBuilder& builder)                 \
+        {                                                   \
+            ::rlog::debug_functor(builder);                 \
+            builder.set_domain(::rlog::domain(DomainName)); \
+        })
 
 #define RICH_LOG_EXPR(expr, ...) RICH_LOG_IMPL(rlog::expression_functor)(##__VA_ARGS__) << #expr " = " << (expr)
