@@ -21,15 +21,19 @@ void rlog::experimental::set_whitelist_filter(cc::unique_function<bool(cc::strin
 
 void MessageBuilder::printf(const char* fmt, ...)
 {
-    char buf[1024];
-
     std::va_list args;
     va_start(args, fmt);
-    int const num_written = std::vsnprintf(buf, sizeof(buf), fmt, args);
+    vprintf(fmt, args);
     va_end(args);
+}
 
+void rlog::MessageBuilder::vprintf(char const* fmt, char* vlist)
+{
+    static_assert(std::is_same_v<std::va_list, char*>, "Unexpected va_list type");
+
+    char buf[1024];
+    int const num_written = std::vsnprintf(buf, sizeof(buf), fmt, vlist);
     CC_ASSERT(num_written < int(sizeof(buf)) && "MessageBuilder::printf truncated");
-
     append({buf, size_t(num_written)});
 }
 

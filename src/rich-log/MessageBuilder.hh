@@ -57,6 +57,8 @@ public:
 
     void printf(char const* fmt, ...) CC_PRINTF_FUNC(2);
 
+    void vprintf(char const* fmt, char* vlist);
+
     MessageBuilder& operator()() { return *this; }
 
     template <class... Args>
