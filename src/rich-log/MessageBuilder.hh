@@ -7,6 +7,7 @@
 
 #include <reflector/to_string.hh>
 
+#include <rich-log/detail/CustomPrintf.hh>
 #include <rich-log/detail/api.hh>
 #include <rich-log/fwd.hh>
 #include <rich-log/options.hh>
@@ -55,12 +56,26 @@ public:
         }
     }
 
+    // custom printf formatting - use %v as an universal specifier for anything, including custom types
+    // other printf specifiers can be used as usual
+    template <class... Args>
+    int customPrintf(char const* fmt, Args&&... args)
+    {
+        char buf[1024];
+        int const len = detail::CustomSnprintf(buf, sizeof(buf), fmt, cc::forward<Args>(args)...);
+        append(cc::string_view(buf, len));
+        return len;
+    }
+
+    // use printf directly
     void printf(char const* fmt, ...) CC_PRINTF_FUNC(2);
 
+    // use vprintf directly, 'vlist' is va_list
     void vprintf(char const* fmt, char* vlist);
 
     MessageBuilder& operator()() { return *this; }
 
+    // main usage
     template <class... Args>
     MessageBuilder& operator()(char const* fmt, Args&&... args)
     {
@@ -68,6 +83,8 @@ public:
         return *this;
     }
 
+    // configuration functor syntax
+    // 'functor' modifies the state of this message builder
     template <class... Args>
     MessageBuilder& operator()(cc::function_ptr<void(MessageBuilder&)> functor, char const* fmt, Args&&... args)
     {
