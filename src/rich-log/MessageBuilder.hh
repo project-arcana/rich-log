@@ -97,8 +97,6 @@ private:
         _msg += s;
     }
 
-    void append_formatted(cc::string_view fmt, cc::span<cc::string const> args);
-
 private:
     location _location = {};
     domain _domain = domain::unspecified();

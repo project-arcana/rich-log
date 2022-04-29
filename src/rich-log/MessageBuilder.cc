@@ -37,35 +37,6 @@ void rlog::MessageBuilder::vprintf(char const* fmt, char* vlist)
     append({buf, size_t(num_written)});
 }
 
-void MessageBuilder::append_formatted(cc::string_view fmt, cc::span<cc::string const> args)
-{
-    size_t arg_i = 0;
-    for (size_t i = 0; i < fmt.size(); ++i)
-    {
-        if (i + 1 < fmt.size() && fmt[i] == '{' && fmt[i + 1] == '}')
-        {
-            CC_ASSERT(arg_i < args.size() && "more escape sequences than provided arguments");
-            _msg += args[arg_i];
-            ++arg_i;
-            ++i;
-        }
-        else
-        {
-            _msg += fmt[i];
-        }
-    }
-
-#ifdef CC_ENABLE_ASSERTIONS
-    if (arg_i != args.size())
-    {
-        std::fprintf(stderr, "[rich-log] provided %zu arguments for just %zu {} escape sequences\n    in log from %s:%d    (function %s)\n",
-                     args.size(), arg_i, this->_location.file, this->_location.line, this->_location.function);
-    }
-#endif
-
-    CC_ASSERT(arg_i == args.size() && "less escape sequences than provided arguments");
-}
-
 MessageBuilder::~MessageBuilder()
 {
     if (_must_be_whitelisted)
