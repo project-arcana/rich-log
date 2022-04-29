@@ -133,6 +133,7 @@ void rlog::logMessageToStdOut(console_log_style style, message_params const& par
     break;
     case console_log_style::message_only:
         std::fprintf(stream, "%s\n", msg);
+        break;
     default:
         CC_UNREACHABLE("unsupported log style");
     }
