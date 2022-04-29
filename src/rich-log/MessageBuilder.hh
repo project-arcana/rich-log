@@ -44,33 +44,22 @@ public:
             functor(*this);
     }
 
-    template <class... Args>
-    void format(char const* fmt, Args const&... args)
-    {
-        if constexpr (sizeof...(Args) == 0)
-            append(fmt);
-        else
-        {
-            cc::string args_s[] = {rf::to_string(args)...};
-            append_formatted(fmt, args_s);
-        }
-    }
-
     // custom printf formatting - use %v as an universal specifier for anything, including custom types
     // other printf specifiers can be used as usual
+    // {} is supported for backwards compatibility
     template <class... Args>
-    int customPrintf(char const* fmt, Args&&... args)
+    int format(char const* fmt, Args&&... args)
     {
         char buf[1024];
-        int const len = detail::CustomSnprintf(buf, sizeof(buf), fmt, cc::forward<Args>(args)...);
+        int const len = detail::CustomSnprintf<Args...>(buf, sizeof(buf), fmt, cc::forward<Args>(args)...);
         append(cc::string_view(buf, len));
         return len;
     }
 
-    // use printf directly
+    // use (non-custom) printf directly
     void printf(char const* fmt, ...) CC_PRINTF_FUNC(2);
 
-    // use vprintf directly, 'vlist' is va_list
+    // use (non-custom) vprintf directly, 'vlist' is va_list
     void vprintf(char const* fmt, char* vlist);
 
     MessageBuilder& operator()() { return *this; }
@@ -79,7 +68,7 @@ public:
     template <class... Args>
     MessageBuilder& operator()(char const* fmt, Args&&... args)
     {
-        format(fmt, cc::forward<Args>(args)...);
+        this->format<Args...>(fmt, cc::forward<Args>(args)...);
         return *this;
     }
 
@@ -89,7 +78,7 @@ public:
     MessageBuilder& operator()(cc::function_ptr<void(MessageBuilder&)> functor, char const* fmt, Args&&... args)
     {
         functor(*this);
-        format(fmt, cc::forward<Args>(args)...);
+        this->format<Args...>(fmt, cc::forward<Args>(args)...);
         return *this;
     }
 

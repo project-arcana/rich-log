@@ -1,13 +1,12 @@
 #pragma once
 
-#include <stdarg.h>
 #include <stddef.h>
-#include <stdio.h>
-#include <string.h>
 
 #include <type_traits>
 
 #include <clean-core/macros.hh>
+
+#include <reflector/to_string.hh>
 
 #include <rich-log/detail/api.hh>
 
@@ -56,52 +55,108 @@ char HasCStrMethodTest(...);
 template <class Container>
 static constexpr bool HasTypeCStrMethod = sizeof(HasCStrMethodTest<std::remove_reference_t<Container>>(nullptr)) == sizeof(int);
 
+// copies up to (destSize - 1) bytes from src to dest, then 0-terminates the written string
+// returns the strlen of the string it tried to create (even if dest was too small)
+CC_FORCE_INLINE size_t Strlcpy(char* __restrict pDestination, char const* __restrict pSource, size_t nDestCapacity)
+{
+    const char* s = pSource;
+    size_t n = nDestCapacity;
+
+    if (n && --n)
+    {
+        do
+        {
+            if ((*pDestination++ = *s++) == 0)
+                break;
+        } while (--n);
+    }
+
+    if (!n)
+    {
+        if (nDestCapacity)
+            *pDestination = 0;
+        while (*s++)
+        {
+        }
+    }
+
+    return (size_t)(s - pSource - 1);
+}
+
 template <class T>
 CC_FORCE_INLINE auto GetStringifiedOrPassthrough(T const& v, char** ppHead, char const* pEnd)
 {
     if constexpr (HasTypePrintfSupport<T>)
     {
         // passthrough
+        //
+        // returning by value is alright, the type is <= 8 byte
+        // sizeof(T) might still be > 8, for example for args like 'char buf[512]'
+        // however this function has return type auto, not decltype(auto), meaning it decays these args to char*
         return v;
     }
     else if constexpr (HasTypeCStrMethod<T>)
     {
         // no need to allocate/copy anything if a c string is already provided
-        return v.c_str();
+        return static_cast<char const*>(v.c_str());
+
+        // theoretically we could translate string view types without copying as well
+        // by using %.*s and splitting the arg into (int)v.size(), v.data()
+        // but splitting a single template-variadic arg into two c-variadic args conditionally would complicate things a lot
     }
     else
     {
         char* const pHead = *ppHead;
+
+        // TODO: if we had a version of this with signature
+        // 'int to_string(char* pBuf, size_t size, T const& val)'
+        // this could be made much more efficient, right now we potentially allocate per arg and have superfluous copies
+#if 0
         size_t const length = to_string(pHead, v);
         CC_ASSERT(pHead + length < pEnd && "Formatted arguments too long");
         (*ppHead) += length;
+#else
+        cc::string asString = rf::to_string(v);
+
+        // strlcpy returns strlen, add one for 0-termination
+        size_t const length = Strlcpy(pHead, asString.c_str(), pEnd - pHead) + 1;
+
+        // this could clamp to pEnd instead and warn/truncate silently if we want to
+        CC_ASSERT(pHead + length < pEnd && "Formatted arguments too long");
+        (*ppHead) += length;
+#endif
+
         return pHead;
     }
 }
 
-// replaces all generic specifiers %k
-RLOG_API size_t RewriteFormatString(
-    char* __restrict pOutBuffer, size_t outBufferSize, char const* __restrict pFmt, char const* const* __restrict ppDefaultSpecifiersPerArg, size_t numArgs);
+// pOutBuffer: the buffer to write the result to
+// bufferSize: size of pOutBuffer
+// the default specifier for each of the arguments in order, or null if the arg type is unsupported
+RLOG_API int RunCustomSnprintf(char* __restrict pOutBuffer,
+                               size_t bufferSize,
+                               char const* const* __restrict ppDefaultSpecifiersPerArg,
+                               size_t numArgs,
+                               char const* __restrict pOriginalFmt,
+                               ...);
 
+// Behaves like snprintf, but supports a generic format specifier %k that automatically handles any type, including
+// stringifiable composite types
 template <class... Args>
-int CustomSnprintf(char* pOutBuffer, size_t bufferSize, char const* __restrict pFmt, Args const&... args)
+int CustomSnprintf(char* pOutBuffer, size_t bufferSize, char const* __restrict pFmt, Args&&... args)
 {
     CC_ASSERT(pFmt && pOutBuffer && bufferSize);
     CC_ASSUME(pFmt && pOutBuffer && bufferSize);
 
     // contains [null, "s", null, "d", ".4f"] for args [Foo{}, char const*, Bar{}, int, float]
-    constexpr char const* const arrDefaultSpecifiers[] = {GetDefaultPrintfSpecifier<Args>()...};
+    // must start with nullptr to avoid zero-sized array
+    static constexpr char const* const arrDefaultSpecifiers[] = {nullptr, GetDefaultPrintfSpecifier<Args>()...};
 
-    // replace all generic specifiers with the default printf specifier, or with %s if it requires custom formatting
-    char fmtBuf[4096];
-    size_t const fmtOffset = RewriteFormatString(fmtBuf, sizeof(fmtBuf), pFmt, arrDefaultSpecifiers, CC_COUNTOF(arrDefaultSpecifiers));
+    char stringifcationBuf[2048];
+    char* pBufHead = stringifcationBuf;
+    char const* pBufEnd = stringifcationBuf + sizeof(stringifcationBuf);
 
-    // use the remaining space in fmtBuf to allocate results of custom formatting
-    char* pFormatArgsHead = fmtBuf + fmtOffset;
-    char* const pFormatArgsEnd = fmtBuf + sizeof(fmtBuf);
-
-    // call the real variadic function
-    return ::snprintf(pOutBuffer, bufferSize, fmtBuf, GetStringifiedOrPassthrough(args, &pFormatArgsHead, pFormatArgsEnd)...);
+    return RunCustomSnprintf(pOutBuffer, bufferSize, arrDefaultSpecifiers + 1, sizeof...(Args), pFmt, GetStringifiedOrPassthrough(args, &pBufHead, pBufEnd)...);
 }
 
 }

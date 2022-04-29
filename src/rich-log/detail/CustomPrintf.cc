@@ -2,6 +2,12 @@
 
 #include <clean-core/assert.hh>
 
+// decorate function names to not pollute symbols if we get linked statically
+#define STB_SPRINTF_DECORATE(name) rich_log_stbsp_##name
+// implementation in this TU
+#define STB_SPRINTF_IMPLEMENTATION
+#include <rich-log/lib/stb_sprintf.h>
+
 namespace
 {
 constexpr bool IsPrintfSpecifierPrefix(char c)
@@ -11,7 +17,7 @@ constexpr bool IsPrintfSpecifierPrefix(char c)
         Text behind the line means it has some usage in printf specifiers
 
         aA double hex
-      - b
+        bB (EXT: used in stb sprintf, possibly gcc)
         c char
         d int
         eE e notation double
@@ -54,7 +60,7 @@ constexpr bool IsPrintfSpecifierPrefix(char c)
         ,
     */
 
-    for (auto p : "aAcdeEfFgGhiIjlLnopqstuxXz0123456789 #+-.'*")
+    for (auto p : "aAbBcdeEfFgGhiIjlLnopqstuxXz0123456789 #+-.'*")
         if (p == c)
             return true;
 
@@ -79,11 +85,15 @@ static_assert(HasTypePrintfSupport<unsigned long long>);
 static_assert(HasTypePrintfSupport<float>);
 static_assert(HasTypePrintfSupport<double>);
 static_assert(HasTypePrintfSupport<int*>);
+static_assert(HasTypePrintfSupport<void*>);
 static_assert(HasTypePrintfSupport<nullptr_t>);
 }
 
-size_t rlog::detail::RewriteFormatString(
-    char* __restrict pOutBuffer, size_t outBufferSize, char const* __restrict pFmt, char const* const* __restrict ppDefaultSpecifiersPerArg, size_t numArgs)
+namespace
+{
+// replaces all generic specifiers %k in pFmt with the default specifier if supported or with %s otherwise
+// writes to pOutBuffer, returns amount of bytes written
+size_t RewriteFormatString(char* __restrict pOutBuffer, size_t outBufferSize, char const* __restrict pFmt, char const* const* __restrict ppDefaultSpecifiersPerArg, size_t numArgs)
 {
     CC_ASSERT(pOutBuffer && outBufferSize && pFmt);
     CC_ASSUME(pOutBuffer && outBufferSize && pFmt);
@@ -143,4 +153,22 @@ size_t rlog::detail::RewriteFormatString(
     *(bufHead++) = '\0';
     CC_ASSERT((bufHead - pOutBuffer) < outBufferSize && "Format string too long");
     return bufHead - pOutBuffer;
+}
+}
+
+RLOG_API int rlog::detail::RunCustomSnprintf(
+    char* __restrict pOutBuffer, size_t bufferSize, char const* const* __restrict ppDefaultSpecifiersPerArg, size_t numArgs, char const* __restrict pOriginalFmt, ...)
+{
+    char fmtBuf[2048];
+    RewriteFormatString(fmtBuf, sizeof(fmtBuf), pOriginalFmt, ppDefaultSpecifiersPerArg, numArgs);
+
+    char const* const pModifiedFmt = fmtBuf;
+
+    va_list vlist;
+    // NOTE: the second argument is the NAME of the function parameter right before the '...' (syntactically!)
+    // It's NOT the format string to use!
+    va_start(vlist, pOriginalFmt);
+    int const res = ::rich_log_stbsp_vsnprintf(pOutBuffer, int(bufferSize), pModifiedFmt, vlist);
+    va_end(vlist);
+    return res;
 }

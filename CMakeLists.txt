@@ -15,7 +15,7 @@ option(RICH_LOG_FORCE_MACRO_PREFIX "if true, only RICH_ macro versions are avail
 # define library
 
 file(GLOB_RECURSE SOURCES "src/*.cc")
-file(GLOB_RECURSE HEADERS "src/*.hh")
+file(GLOB_RECURSE HEADERS "src/*.hh" "src/*.h")
 
 arcana_add_library(RLOG rich-log SOURCES HEADERS)
 
