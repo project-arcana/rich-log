@@ -66,7 +66,7 @@ void rlog::logMessageToStdOut(console_log_style style, message_params const& par
     {
     case console_log_style::verbose_with_location:
         std::fprintf(stream, "         %s:%d  (%s):\n%s\n", params.location.file, params.location.line, params.location.function, msg);
-        // fall through
+        [[fallthrough]];
     case console_log_style::verbose:
     {
         // prepare timestamp
