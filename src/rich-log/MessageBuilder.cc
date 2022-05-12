@@ -12,7 +12,13 @@
 
 using namespace rlog;
 
-static cc::unique_function<bool(cc::string_view domain, cc::string_view msg)> sWhitelistFilter;
+namespace
+{
+// not sure if we want this configurable since the mechanism for that is custom loggers already
+rlog::console_log_style sDefaultLogStyle = console_log_style::brief;
+
+cc::unique_function<bool(cc::string_view domain, cc::string_view msg)> sWhitelistFilter;
+}
 
 void rlog::experimental::set_whitelist_filter(cc::unique_function<bool(cc::string_view, cc::string_view)> filter)
 {
@@ -49,6 +55,6 @@ MessageBuilder::~MessageBuilder()
     if (numLoggers == 0)
     {
         // fall back to stdout logger
-        logMessageToStdOut(console_log_style::verbose, msgParams, _msg.c_str());
+        logMessageToStdOut(sDefaultLogStyle, msgParams, _msg.c_str());
     }
 }
