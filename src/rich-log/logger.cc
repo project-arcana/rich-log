@@ -4,9 +4,15 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
+#include <mutex>
 
 #include <clean-core/macros.hh>
 #include <clean-core/utility.hh>
+#include <clean-core/vector.hh>
+
+#include <rich-log/experimental.hh>
+#include <rich-log/log.hh>
+#include <rich-log/message.hh>
 
 #ifdef CC_OS_WINDOWS
 #include <clean-core/native/win32_sanitized.hh>
@@ -22,14 +28,44 @@
 #define RLOG_COLOR_TIMESTAMP "\u001b[38;5;37m"
 #define RLOG_COLOR_RESET "\u001b[0m"
 
+/*
+namespace rlog
+{
+struct severity
+{
+    explicit constexpr severity(char const* v, char const* color = "") : value(v), color_code(color) {}
+    char const* value;      ///< Name of the severity
+    char const* color_code; ///< ANSI color codes
+
+    static constexpr severity trace() { return severity{"TRACE", "\u001b[38;5;14m"}; }
+    static constexpr severity info() { return severity{"INFO", "\u001b[38;5;241m"}; }
+    static constexpr severity debug() { return severity{"DEBUG", "\u001b[38;5;148m"}; }
+    static constexpr severity warning() { return severity{"WARN", "\u001b[38;5;202m"}; }
+    static constexpr severity error() { return severity{"ERROR", "\u001b[38;5;196m\u001b[1m"}; }
+};
+struct domain
+{
+    explicit constexpr domain(char const* v, char const* color = "\u001b[38;5;244m") : value(v), color_code(color) {}
+    char const* value;      ///< Name of the domain
+    char const* color_code; ///< ANSI color codes
+
+    static constexpr domain unspecified() { return domain{nullptr, "\u001b[38;5;238m"}; }
+};
+}
+
+ */
+
 namespace
 {
 thread_local char tls_thread_name[32] = "";
 rlog::console_log_style g_log_style = rlog::console_log_style::verbose;
+rlog::verbosity::type g_break_on_log_min_verbosity = rlog::verbosity::Fatal;
 
-CC_FORCE_INLINE void write_timebuffer(char* timebuffer, size_t size, char const* format)
+cc::unique_function<void(rlog::message_ref)> g_default_logger;
+thread_local cc::vector<cc::unique_function<void(rlog::message_ref)>> g_local_logger_stack;
+
+CC_FORCE_INLINE void write_timebuffer(char* timebuffer, size_t size, std::time_t t, char const* format)
 {
-    std::time_t const t = std::time(nullptr);
 #ifdef CC_OS_WINDOWS
     std::tm lt_stack;
     ::localtime_s(&lt_stack, &t);
@@ -39,92 +75,121 @@ CC_FORCE_INLINE void write_timebuffer(char* timebuffer, size_t size, char const*
 #endif
     timebuffer[std::strftime(timebuffer, size, format, lt)] = '\0';
 }
+
+void do_default_console_log(rlog::message_ref msg)
+{
+    auto stream = msg.verbosity >= rlog::verbosity::Warning ? stderr : stdout;
+
+    // prepare timestamp
+    char timebuffer[9];
+    write_timebuffer(timebuffer, sizeof(timebuffer), msg.timestamp, "%H:%M:%S");
+
+    // brief log line
+    // [timestamp] [severity] [domain] [message]
+    // 07:14:10 WARNING [NET] <the message being printed>\n
+
+    char const* verbosity_color_code = "";
+    char const* verbosity_name = "";
+    switch (msg.verbosity)
+    {
+    case rlog::verbosity::Trace:
+        verbosity_color_code = "\u001b[38;5;14m";
+        verbosity_name = "TRACE ";
+        break;
+    case rlog::verbosity::Debug:
+        verbosity_color_code = "\u001b[38;5;148m";
+        verbosity_name = "DEBUG ";
+        break;
+    case rlog::verbosity::Info:
+        verbosity_color_code = "\u001b[38;5;241m";
+        // no verbosity name
+        break;
+    case rlog::verbosity::Warning:
+        verbosity_color_code = "\u001b[38;5;202m";
+        verbosity_name = "WARNING ";
+        break;
+    case rlog::verbosity::Error:
+        verbosity_color_code = "\u001b[38;5;196m\u001b[1m";
+        verbosity_name = "ERROR ";
+        break;
+    case rlog::verbosity::Fatal:
+        verbosity_color_code = "\u001b[38;5;196m\u001b[1m";
+        verbosity_name = "FATAL ";
+        break;
+
+    case rlog::verbosity::_count: // silence warning
+        break;
+    }
+
+    // simple mutex to make sure LOGs are "atomic"
+    // this is not really high performance, but those users should use set_global_default_logger anyways
+    static std::mutex printf_mutex;
+    auto _ = std::lock_guard<std::mutex>(printf_mutex);
+
+    // flush other stream to improve ordering
+    std::fflush(stream == stdout ? stderr : stdout);
+
+    // timestamp and severity (always)
+    auto prefix_length = std::fprintf(stream,                                                              //
+                                      RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%s" RLOG_COLOR_RESET, //
+                                      timebuffer, verbosity_color_code, verbosity_name);
+
+    // domain, optional
+    if (msg.domain != &rlog::domains::Default::domain)
+        prefix_length += std::fprintf(stream,                   //
+                                      "%s%s " RLOG_COLOR_RESET, //
+                                      msg.domain->ansi_color_code, msg.domain->name);
+
+    // print actual message line by line
+    auto first_line = true;
+    for (auto line : msg.message.split('\n'))
+    {
+        // TODO: limit output size if it's too large?
+
+        if (first_line)
+            first_line = false;
+        else
+            // pad with spaces
+            std::fprintf(stream, "%*s", int(prefix_length), "");
+
+        std::fprintf(stream, "%.*s\n", int(line.size()), line.data());
+    }
+
+    // flush curr streams to improve ordering
+    std::fflush(stream == stdout ? stdout : stderr);
+}
 }
 
-int rlog::print_prefix_to_stream(const location& location, rlog::severity severity, rlog::domain domain, std::FILE* stream)
+void rlog::experimental::set_whitelist_filter(cc::unique_function<bool(cc::string_view domain, cc::string_view message)>)
 {
-    (void)location; // unused
+    // is ignored in the current model
+}
 
-    switch (g_log_style)
-    {
-    case console_log_style::verbose_with_location:
-        std::fprintf(stream, "         %s:%d  (%s):\n", location.file, location.line, location.function);
-        // fall through
-    case console_log_style::verbose:
-    {
-        // prepare timestamp
-        char timebuffer[18];
-        write_timebuffer(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S");
+bool rlog::detail::do_log(const domain_info& domain, verbosity::type verbosity, const location* loc, cc::string_view message)
+{
+    message_ref msg;
+    msg.timestamp = std::time(nullptr);
+    msg.location = loc;
+    msg.domain = &domain;
+    msg.verbosity = verbosity;
+    msg.thread_name = tls_thread_name;
+    msg.message = message;
 
-        // full log line
-        // [timestamp]     [thread id] [severity] [domain] [message]
-        // 06.05.20 07:14:10 t000      INFO       NET      <the message being printed>\n
+    // local logger?
+    if (!g_local_logger_stack.empty())
+        g_local_logger_stack.back()(msg);
+    // user-defined default logger?
+    else if (g_default_logger.is_valid())
+        g_default_logger(msg);
+    // console fallback?
+    else
+        do_default_console_log(msg);
 
-        auto domain_name = domain.value ? domain.value : "LOG";
-        return std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s %s " RLOG_COLOR_RESET "%s%-7s " RLOG_COLOR_RESET " %s%-9s " RLOG_COLOR_RESET, timebuffer,
-                            tls_thread_name, severity.color_code, severity.value, domain.color_code, domain_name);
-    }
-    break;
-    case console_log_style::verbose_no_color:
-    {
-        // prepare timestamp
-        char timebuffer[18];
-        write_timebuffer(timebuffer, sizeof(timebuffer), "%d.%m.%y %H:%M:%S");
-
-        // full log line
-        // [timestamp]     [thread id] [severity] [domain] [message]
-        // 06.05.20 07:14:10 t000      INFO       NET      <the message being printed>\n
-
-        auto domain_name = domain.value ? domain.value : "LOG";
-        return std::fprintf(stream, "%s %s %-7s  %-9s ", timebuffer, tls_thread_name, severity.value, domain_name);
-    }
-    break;
-    case console_log_style::brief:
-    {
-        // prepare timestamp
-        char timebuffer[9];
-        write_timebuffer(timebuffer, sizeof(timebuffer), "%H:%M:%S");
-
-        // brief log line
-        // [timestamp] [severity] [domain] [message]
-        // 07:14:10 INFO [NET] <the message being printed>\n
-
-        // timestamp and severity (always)
-        auto length
-            = std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%s " RLOG_COLOR_RESET, timebuffer, severity.color_code, severity.value);
-
-        if (domain.value != nullptr) // domain, optional
-            length += std::fprintf(stream, "%s%s " RLOG_COLOR_RESET, domain.color_code, domain.value);
-
-        return length;
-    }
-    break;
-    case console_log_style::briefer:
-    {
-        // prepare timestamp
-        char timebuffer[6];
-        write_timebuffer(timebuffer, sizeof(timebuffer), "%H:%M");
-
-        // briefer log line
-        // [timestamp] [severity] [domain] [message]
-        // 07:14 I [NET] <the message being printed>\n
-
-        // timestamp and severity (always)
-        auto length = std::fprintf(stream, RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%c " RLOG_COLOR_RESET, timebuffer, severity.color_code,
-                                   severity.value[0] ? severity.value[0] : ' ');
-
-        if (domain.value != nullptr) // domain, optional
-            length += std::fprintf(stream, "%s%s " RLOG_COLOR_RESET, domain.color_code, domain.value);
-
-        return length;
-    }
-    break;
-    case console_log_style::message_only:
-        // intentionally left blank.
-        return 0;
-    default:
-        CC_UNREACHABLE("unsupported log style");
-    }
+    CC_ASSERT(0 <= verbosity && verbosity < rlog::verbosity::_count);
+    auto break_on_log = domain.break_on_log[verbosity];
+    if (verbosity >= g_break_on_log_min_verbosity)
+        break_on_log = true;
+    return break_on_log;
 }
 
 void rlog::set_current_thread_name(const char* fmt, ...)
@@ -142,7 +207,10 @@ void rlog::set_current_thread_name(const char* fmt, ...)
     }
 }
 
-void rlog::set_console_log_style(rlog::console_log_style style) { g_log_style = style; }
+void rlog::set_console_log_style(rlog::console_log_style)
+{
+    // deprecated
+}
 
 bool rlog::enable_win32_colors()
 {
@@ -163,4 +231,20 @@ bool rlog::enable_win32_colors()
 #else
     return true;
 #endif
+}
+
+void rlog::set_break_on_log_minimum_verbosity(verbosity::type v) { g_break_on_log_min_verbosity = v; }
+
+void rlog::set_global_default_logger(cc::unique_function<void(message_ref)> logger) { g_default_logger = cc::move(logger); }
+
+void rlog::push_local_logger(cc::unique_function<void(message_ref)> logger)
+{
+    CC_ASSERT(logger.is_valid() && "loggger must be a valid function");
+    g_local_logger_stack.push_back(cc::move(logger));
+}
+
+void rlog::pop_local_logger()
+{
+    CC_ASSERT(!g_local_logger_stack.empty() && "no local logger on the stack. scope mismatch? or wrong thread?");
+    g_local_logger_stack.pop_back();
 }

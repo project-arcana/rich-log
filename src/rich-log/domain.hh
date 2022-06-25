@@ -49,6 +49,8 @@ enum type : int
 struct domain_info
 {
     rlog::verbosity::type verbosity; // always first
+    char const* name;
+    char const* ansi_color_code;
     bool break_on_log[verbosity::_count];
     bool record_stacktrace[verbosity::_count];
 };

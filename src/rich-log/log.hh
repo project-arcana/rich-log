@@ -38,26 +38,26 @@
  *    RICH_LOG_DECLARE_DOMAIN_MV(MyDomain, Warning);
  */
 
-#define RICH_LOG_IMPL(Domain, Severity, Formatter, ...)                                                                              \
-    do                                                                                                                               \
-    {                                                                                                                                \
-        if constexpr (rlog::domains::Domain::CompileTimeMinVerbosity >= rlog::verbosity::Severity)                                   \
-        {                                                                                                                            \
-            if (rlog::domains::Domain::domain.verbosity >= rlog::verbosity::Severity)                                                \
-            {                                                                                                                        \
-                static constexpr rlog::location _rlog_location = RLOG_LOCATION();                                                    \
-                if (rlog::do_log(rlog::domains::Domain::domain, rlog::verbosity::Severity, &_rlog_location, Formatter(__VA_ARGS__))) \
-                    CC_DEBUG_BREAK();                                                                                                \
-            }                                                                                                                        \
-        }                                                                                                                            \
+#define RICH_LOG_IMPL(Domain, Severity, Formatter, ...)                                                                                      \
+    do                                                                                                                                       \
+    {                                                                                                                                        \
+        if constexpr (rlog::domains::Domain::CompileTimeMinVerbosity >= rlog::verbosity::Severity)                                           \
+        {                                                                                                                                    \
+            if (rlog::domains::Domain::domain.verbosity >= rlog::verbosity::Severity)                                                        \
+            {                                                                                                                                \
+                static constexpr rlog::location _rlog_location = RLOG_LOCATION();                                                            \
+                if (rlog::detail::do_log(rlog::domains::Domain::domain, rlog::verbosity::Severity, &_rlog_location, Formatter(__VA_ARGS__))) \
+                    CC_DEBUG_BREAK();                                                                                                        \
+            }                                                                                                                                \
+        }                                                                                                                                    \
     } while (0) // force ;
 
 /// writes an info log message to the Default domain using cc::format (printf AND pythonic syntax)
-#define RICH_LOG(...) RICH_LOG_IMPL(Default, info, cc::format, __VA_ARGS__)
+#define RICH_LOG(...) RICH_LOG_IMPL(Default, Info, cc::format, __VA_ARGS__)
 /// writes an info log message to the Default domain using cc::formatp (pythonic  syntax only)
-#define RICH_LOGP(...) RICH_LOG_IMPL(Default, info, cc::formatp, __VA_ARGS__)
+#define RICH_LOGP(...) RICH_LOG_IMPL(Default, Info, cc::formatp, __VA_ARGS__)
 /// writes an info log message to the Default domain using cc::formatf (printf syntax only)
-#define RICH_LOGF(...) RICH_LOG_IMPL(Default, info, cc::formatf, __VA_ARGS__)
+#define RICH_LOGF(...) RICH_LOG_IMPL(Default, Info, cc::formatf, __VA_ARGS__)
 /// writes a log message with given domain and severity using cc::format
 #define RICH_LOGD(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, cc::format, __VA_ARGS__)
 /// convenience wrapper for LOG("<expr> = %s", <expr>)
@@ -69,11 +69,11 @@
 #ifndef RICH_LOG_FORCE_MACRO_PREFIX
 
 /// writes an info log message to the Default domain using cc::format (printf AND pythonic syntax)
-#define LOG(...) RICH_LOG_IMPL(Default, info, cc::format, __VA_ARGS__)
+#define LOG(...) RICH_LOG_IMPL(Default, Info, cc::format, __VA_ARGS__)
 /// writes an info log message to the Default domain using cc::formatp (pythonic  syntax only)
-#define LOGP(...) RICH_LOG_IMPL(Default, info, cc::formatp, __VA_ARGS__)
+#define LOGP(...) RICH_LOG_IMPL(Default, Info, cc::formatp, __VA_ARGS__)
 /// writes an info log message to the Default domain using cc::formatf (printf syntax only)
-#define LOGF(...) RICH_LOG_IMPL(Default, info, cc::formatf, __VA_ARGS__)
+#define LOGF(...) RICH_LOG_IMPL(Default, Info, cc::formatf, __VA_ARGS__)
 /// writes a log message with given domain and severity using cc::format
 #define LOGD(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, cc::format, __VA_ARGS__)
 /// convenience wrapper for LOG("<expr> = %s", <expr>)
