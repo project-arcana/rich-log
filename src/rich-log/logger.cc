@@ -106,7 +106,7 @@ void rlog::default_logger_fun(message_ref msg, bool& break_on_log)
     std::fflush(stream == stdout ? stderr : stdout);
 
     // timestamp and severity (always)
-    auto prefix_length = 9;
+    int prefix_length = 9 + std::strlen(verbosity_name);
     std::fprintf(stream,                                                              //
                  RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%s" RLOG_COLOR_RESET, //
                  timebuffer, verbosity_color_code, verbosity_name);
