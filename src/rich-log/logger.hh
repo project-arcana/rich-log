@@ -75,6 +75,10 @@ RLOG_API void push_local_logger(logger_fun logger);
 /// pops a logger from the threadlocal log overwrite stack
 RLOG_API void pop_local_logger();
 
+/// the default logger
+/// this can be used for custom loggers that still want the default behavior
+RLOG_API void default_logger_fun(message_ref msg, bool& break_on_log);
+
 /// helper struct for a threadlocal scoped log overwrite
 /// Usage:
 ///

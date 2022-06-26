@@ -48,8 +48,12 @@ CC_FORCE_INLINE void write_timebuffer(char* timebuffer, size_t size, std::time_t
     timebuffer[std::strftime(timebuffer, size, format, lt)] = '\0';
 }
 
-void do_default_console_log(rlog::message_ref msg)
+}
+
+void rlog::default_logger_fun(message_ref msg, bool& break_on_log)
 {
+    (void)break_on_log; // default behavior is fine
+
     auto stream = msg.verbosity >= rlog::verbosity::Warning ? stderr : stdout;
 
     // prepare timestamp
@@ -130,7 +134,6 @@ void do_default_console_log(rlog::message_ref msg)
     // flush curr streams to improve ordering
     std::fflush(stream == stdout ? stdout : stderr);
 }
-}
 
 void rlog::experimental::set_whitelist_filter(cc::unique_function<bool(cc::string_view domain, cc::string_view message)>)
 {
@@ -159,7 +162,7 @@ bool rlog::detail::do_log(const domain_info& domain, verbosity::type verbosity, 
         g_default_logger(msg, break_on_log);
     // console fallback?
     else
-        do_default_console_log(msg);
+        default_logger_fun(msg, break_on_log);
 
     return break_on_log;
 }
