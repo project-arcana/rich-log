@@ -48,11 +48,18 @@ enum type : int
 
 struct domain_info
 {
-    rlog::verbosity::type verbosity; // always first
-    char const* name;
-    char const* ansi_color_code;
-    bool break_on_log[verbosity::_count];
-    bool record_stacktrace[verbosity::_count];
+    rlog::verbosity::type verbosity = rlog::verbosity::Info; // always first
+    char const* name = "";
+    char const* ansi_color_code = "\u001b[38;5;244m";
+    bool break_on_log[verbosity::_count] = {false, false, false, false, true, true};
+    bool record_stacktrace[verbosity::_count] = {false, false, false, false, true, true};
+
+    static constexpr domain_info make_named(char const* name)
+    {
+        domain_info di;
+        di.name = name;
+        return di;
+    }
 };
 }
 
@@ -73,7 +80,9 @@ struct domain_info
 /// Note:
 ///
 ///   in some .cc, you need to add:
-///   TODO
+///   RICH_LOG_DEFINE_DOMAIN(MeshImporter::FBX);
+///
+///   TODO: how can the struct be custom initialized?
 ///
 #define RICH_LOG_DECLARE_DOMAIN(Name) RICH_LOG_DECLARE_DOMAIN_MV(Name, Debug)
 #define RICH_LOG_DECLARE_DOMAIN_MV(Name, min_verbosity)          \
@@ -90,6 +99,7 @@ struct domain_info
     }                                                            \
     }                                                            \
     CC_FORCE_SEMICOLON
+#define RICH_LOG_DEFINE_DOMAIN(Name) ::rlog::domain_info rlog::domains::Name::domain = ::rlog::domain_info::make_named(#Name) // force ;
 
 // this namespace is user-extensible
 namespace rlog::domains
