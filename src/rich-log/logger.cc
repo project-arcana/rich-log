@@ -106,15 +106,20 @@ void rlog::default_logger_fun(message_ref msg, bool& break_on_log)
     std::fflush(stream == stdout ? stderr : stdout);
 
     // timestamp and severity (always)
-    auto prefix_length = std::fprintf(stream,                                                              //
-                                      RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%s" RLOG_COLOR_RESET, //
-                                      timebuffer, verbosity_color_code, verbosity_name);
+    auto prefix_length = 9;
+    std::fprintf(stream,                                                              //
+                 RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%s" RLOG_COLOR_RESET, //
+                 timebuffer, verbosity_color_code, verbosity_name);
 
     // domain, optional
     if (msg.domain != &rlog::domains::Default::domain)
-        prefix_length += std::fprintf(stream,                   //
-                                      "%s%s " RLOG_COLOR_RESET, //
-                                      msg.domain->ansi_color_code, msg.domain->name);
+    {
+        std::fprintf(stream,                   //
+                     "%s%s " RLOG_COLOR_RESET, //
+                     msg.domain->ansi_color_code, msg.domain->name);
+        prefix_length += std::strlen(msg.domain->name) + 1;
+    }
+
 
     // print actual message line by line
     auto first_line = true;
@@ -126,7 +131,7 @@ void rlog::default_logger_fun(message_ref msg, bool& break_on_log)
             first_line = false;
         else
             // pad with spaces
-            std::fprintf(stream, "%*s", int(prefix_length), "");
+            std::fprintf(stream, "%*s", prefix_length, "");
 
         std::fprintf(stream, "%.*s\n", int(line.size()), line.data());
     }

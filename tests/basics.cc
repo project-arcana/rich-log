@@ -17,6 +17,8 @@ TEST("basic logging", disabled) // call directly to run this test (it will print
     LOGD(Test, Warning, "'tis a warning, mate");
     LOGD(Test, Info, "information follows at %s", 12345);
 
+    LOG("multi\nline\nlog message");
+
     LOGD(Test, Error, "an error occured"); // debugger should break here
 
     CHECK(true); // disable warning
