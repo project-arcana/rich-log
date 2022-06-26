@@ -41,9 +41,9 @@
 #define RICH_LOG_IMPL(Domain, Severity, Formatter, ...)                                                                                      \
     do                                                                                                                                       \
     {                                                                                                                                        \
-        if constexpr (rlog::domains::Domain::CompileTimeMinVerbosity >= rlog::verbosity::Severity)                                           \
+        if constexpr (rlog::verbosity::Severity >= rlog::domains::Domain::CompileTimeMinVerbosity)                                           \
         {                                                                                                                                    \
-            if (rlog::domains::Domain::domain.verbosity >= rlog::verbosity::Severity)                                                        \
+            if (rlog::verbosity::Severity >= rlog::domains::Domain::domain.verbosity)                                                        \
             {                                                                                                                                \
                 static constexpr rlog::location _rlog_location = RLOG_LOCATION();                                                            \
                 if (rlog::detail::do_log(rlog::domains::Domain::domain, rlog::verbosity::Severity, &_rlog_location, Formatter(__VA_ARGS__))) \
