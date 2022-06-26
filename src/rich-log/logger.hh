@@ -69,7 +69,7 @@ RLOG_API void set_global_default_logger(logger_fun logger);
 
 /// pushes a logger onto the threadlocal log overwrite stack
 /// i.e. all subsequent LOG calls on the current thread are routed to this logger (unless further overwritten)
-/// NOTE: rlog::overwrite_logger can be used for automatic scoping
+/// NOTE: rlog::scoped_logger_override can be used for automatic scoping
 RLOG_API void push_local_logger(logger_fun logger);
 
 /// pops a logger from the threadlocal log overwrite stack
@@ -82,19 +82,19 @@ RLOG_API void default_logger_fun(message_ref msg, bool& break_on_log);
 /// helper struct for a threadlocal scoped log overwrite
 /// Usage:
 ///
-///   auto _ = rlog::overwrite_logger([](rlog::message_ref msg) {
+///   auto _ = rlog::scoped_logger_override([](rlog::message_ref msg) {
 ///       custom_log(msg.message);
 ///   });
 ///
-struct RLOG_API overwrite_logger
+struct RLOG_API scoped_logger_override
 {
-    [[nodiscard]] explicit overwrite_logger(logger_fun logger) { push_local_logger(cc::move(logger)); }
+    [[nodiscard]] explicit scoped_logger_override(logger_fun logger) { push_local_logger(cc::move(logger)); }
 
-    ~overwrite_logger() { pop_local_logger(); }
+    ~scoped_logger_override() { pop_local_logger(); }
 
-    overwrite_logger(overwrite_logger&&) = delete;
-    overwrite_logger& operator=(overwrite_logger&&) = delete;
-    overwrite_logger(overwrite_logger const&) = delete;
-    overwrite_logger& operator=(overwrite_logger const&) = delete;
+    scoped_logger_override(scoped_logger_override&&) = delete;
+    scoped_logger_override& operator=(scoped_logger_override&&) = delete;
+    scoped_logger_override(scoped_logger_override const&) = delete;
+    scoped_logger_override& operator=(scoped_logger_override const&) = delete;
 };
 }
