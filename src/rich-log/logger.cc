@@ -58,11 +58,10 @@ struct domain
 namespace
 {
 thread_local char tls_thread_name[32] = "";
-rlog::console_log_style g_log_style = rlog::console_log_style::verbose;
 rlog::verbosity::type g_break_on_log_min_verbosity = rlog::verbosity::Fatal;
 
-cc::unique_function<void(rlog::message_ref)> g_default_logger;
-thread_local cc::vector<cc::unique_function<void(rlog::message_ref)>> g_local_logger_stack;
+rlog::logger_fun g_default_logger;
+thread_local cc::vector<rlog::logger_fun> g_local_logger_stack;
 
 CC_FORCE_INLINE void write_timebuffer(char* timebuffer, size_t size, std::time_t t, char const* format)
 {
@@ -175,20 +174,20 @@ bool rlog::detail::do_log(const domain_info& domain, verbosity::type verbosity, 
     msg.thread_name = tls_thread_name;
     msg.message = message;
 
+    CC_ASSERT(0 <= verbosity && verbosity < rlog::verbosity::_count);
+    auto break_on_log = domain.break_on_log[verbosity];
+    break_on_log |= verbosity >= g_break_on_log_min_verbosity;
+
     // local logger?
     if (!g_local_logger_stack.empty())
-        g_local_logger_stack.back()(msg);
+        g_local_logger_stack.back()(msg, break_on_log);
     // user-defined default logger?
     else if (g_default_logger.is_valid())
-        g_default_logger(msg);
+        g_default_logger(msg, break_on_log);
     // console fallback?
     else
         do_default_console_log(msg);
 
-    CC_ASSERT(0 <= verbosity && verbosity < rlog::verbosity::_count);
-    auto break_on_log = domain.break_on_log[verbosity];
-    if (verbosity >= g_break_on_log_min_verbosity)
-        break_on_log = true;
     return break_on_log;
 }
 
@@ -235,9 +234,9 @@ bool rlog::enable_win32_colors()
 
 void rlog::set_break_on_log_minimum_verbosity(verbosity::type v) { g_break_on_log_min_verbosity = v; }
 
-void rlog::set_global_default_logger(cc::unique_function<void(message_ref)> logger) { g_default_logger = cc::move(logger); }
+void rlog::set_global_default_logger(logger_fun logger) { g_default_logger = cc::move(logger); }
 
-void rlog::push_local_logger(cc::unique_function<void(message_ref)> logger)
+void rlog::push_local_logger(logger_fun logger)
 {
     CC_ASSERT(logger.is_valid() && "loggger must be a valid function");
     g_local_logger_stack.push_back(cc::move(logger));

@@ -56,16 +56,21 @@ RLOG_API bool enable_win32_colors();
 /// default is Fatal
 RLOG_API void set_break_on_log_minimum_verbosity(verbosity::type v);
 
+/// logger functions process message references
+/// CAUTION: DO NOT STORE THE MESSAGE REFERENCE (you need to make copies of the string_views)
+/// break_on_log can be set to true or false to overwrite the default behavior
+using logger_fun = cc::unique_function<void(message_ref msg, bool& break_on_log)>;
+
 /// sets the global default logger (i.e. the fallback when no local logger overwrite is provided)
 /// CAUTION: this function must be externally synchronized
 ///          no LOG call must happen (e.g. in a different thread) at the same time
 ///          usually, this is called once at the start of main and otherwise not touched
-RLOG_API void set_global_default_logger(cc::unique_function<void(message_ref msg)> logger);
+RLOG_API void set_global_default_logger(logger_fun logger);
 
 /// pushes a logger onto the threadlocal log overwrite stack
 /// i.e. all subsequent LOG calls on the current thread are routed to this logger (unless further overwritten)
 /// NOTE: rlog::overwrite_logger can be used for automatic scoping
-RLOG_API void push_local_logger(cc::unique_function<void(message_ref msg)> logger);
+RLOG_API void push_local_logger(logger_fun logger);
 
 /// pops a logger from the threadlocal log overwrite stack
 RLOG_API void pop_local_logger();
@@ -79,7 +84,7 @@ RLOG_API void pop_local_logger();
 ///
 struct RLOG_API overwrite_logger
 {
-    [[nodiscard]] explicit overwrite_logger(cc::unique_function<void(message_ref msg)> logger) { push_local_logger(cc::move(logger)); }
+    [[nodiscard]] explicit overwrite_logger(logger_fun logger) { push_local_logger(cc::move(logger)); }
 
     ~overwrite_logger() { pop_local_logger(); }
 
