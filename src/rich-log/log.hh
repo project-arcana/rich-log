@@ -43,7 +43,7 @@
     {                                                                                                                                        \
         if constexpr (rlog::verbosity::Severity >= rlog::domains::Domain::CompileTimeMinVerbosity)                                           \
         {                                                                                                                                    \
-            if (rlog::verbosity::Severity >= rlog::domains::Domain::domain.verbosity)                                                        \
+            if (rlog::verbosity::Severity >= rlog::domains::Domain::domain.min_verbosity)                                                    \
             {                                                                                                                                \
                 static constexpr rlog::location _rlog_location = RLOG_LOCATION();                                                            \
                 if (rlog::detail::do_log(rlog::domains::Domain::domain, rlog::verbosity::Severity, &_rlog_location, Formatter(__VA_ARGS__))) \

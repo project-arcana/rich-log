@@ -48,7 +48,7 @@ enum type : int
 
 struct domain_info
 {
-    rlog::verbosity::type verbosity = rlog::verbosity::Info; // always first
+    rlog::verbosity::type min_verbosity = rlog::verbosity::Info; // always first
     char const* name = "";
     char const* ansi_color_code = "\u001b[38;5;244m";
     bool break_on_log[verbosity::_count] = {false, false, false, false, true, true};
@@ -83,6 +83,13 @@ struct domain_info
 ///   RICH_LOG_DEFINE_DOMAIN(MeshImporter::FBX);
 ///
 ///   TODO: how can the struct be custom initialized?
+///
+///   Domain settings can be changed anytime, e.g.:
+///
+///     rlog::domains::Default::domain.min_verbosity = rlog::verbosity::Debug;
+///     rlog::domains::Default::domain.break_on_log[rlog::verbosity::Warning] = true;
+///
+///     (this should be externally synchronized, otherwise it might create a race condition)
 ///
 #define RICH_LOG_DECLARE_DOMAIN(Name) RICH_LOG_DECLARE_DOMAIN_MV(Name, Debug)
 #define RICH_LOG_DECLARE_DOMAIN_MV(Name, min_verbosity)          \
