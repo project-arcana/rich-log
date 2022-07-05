@@ -13,6 +13,7 @@ TEST("logging capture")
         {
             msg = m.message;
             do_break = false;
+            return true;
         });
 
     LOG("Hello World");
@@ -26,7 +27,12 @@ TEST("logging capture")
 
     {
         cc::string msg2;
-        auto _ = rlog::scoped_logger_override([&](rlog::message_ref m, bool&) { msg2 = m.message; });
+        auto _ = rlog::scoped_logger_override(
+            [&](rlog::message_ref m, bool&)
+            {
+                msg2 = m.message;
+                return true;
+            });
 
         LOG("nested msg");
         CHECK(msg == "% fatal %");
@@ -40,14 +46,24 @@ TEST("logging capture")
 TEST("default logger")
 {
     cc::string msg;
-    rlog::set_global_default_logger([&](rlog::message_ref m, bool&) { msg = m.message; });
+    rlog::set_global_default_logger(
+        [&](rlog::message_ref m, bool&)
+        {
+            msg = m.message;
+            return true;
+        });
 
     LOG("message A");
     CHECK(msg == "message A");
 
     {
         cc::string msg2;
-        auto _ = rlog::scoped_logger_override([&](rlog::message_ref m, bool&) { msg2 = m.message; });
+        auto _ = rlog::scoped_logger_override(
+            [&](rlog::message_ref m, bool&)
+            {
+                msg2 = m.message;
+                return true;
+            });
 
         LOG("local msg");
         CHECK(msg == "message A");
@@ -58,4 +74,26 @@ TEST("default logger")
     CHECK(msg == "not nested anymore");
 
     rlog::set_global_default_logger({});
+}
+
+TEST("logger cooldown verbosity")
+{
+    int msg_cnt = 0;
+    auto _ = rlog::scoped_logger_override(
+        [&](rlog::message_ref, bool&)
+        {
+            msg_cnt++;
+            return true;
+        });
+
+    LOG("capture me");
+    CHECK(msg_cnt == 1);
+
+    for (auto i = 0; i < 10; ++i)
+        LOG("many captures");
+    CHECK(msg_cnt == 11);
+
+    for (auto i = 0; i < 10; ++i)
+        LOGD_ONCE(Default, Info, "many logs, captured once");
+    CHECK(msg_cnt == 12);
 }

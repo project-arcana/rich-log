@@ -59,7 +59,8 @@ RLOG_API void set_break_on_log_minimum_verbosity(verbosity::type v);
 /// logger functions process message references
 /// CAUTION: DO NOT STORE THE MESSAGE REFERENCE (you need to make copies of the string_views)
 /// break_on_log can be set to true or false to overwrite the default behavior
-using logger_fun = cc::unique_function<void(message_ref msg, bool& break_on_log)>;
+/// returns true if the message is consumed and should not propagate to the next logger
+using logger_fun = cc::unique_function<bool(message_ref msg, bool& break_on_log)>;
 
 /// sets the global default logger (i.e. the fallback when no local logger overwrite is provided)
 /// CAUTION: this function must be externally synchronized
@@ -77,7 +78,7 @@ RLOG_API void pop_local_logger();
 
 /// the default logger
 /// this can be used for custom loggers that still want the default behavior
-RLOG_API void default_logger_fun(message_ref msg, bool& break_on_log);
+RLOG_API bool default_logger_fun(message_ref msg, bool& break_on_log);
 
 /// helper struct for a threadlocal scoped log overwrite
 /// Usage:

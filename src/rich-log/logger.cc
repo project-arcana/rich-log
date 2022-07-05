@@ -50,7 +50,7 @@ CC_FORCE_INLINE void write_timebuffer(char* timebuffer, size_t size, std::time_t
 
 }
 
-void rlog::default_logger_fun(message_ref msg, bool& break_on_log)
+bool rlog::default_logger_fun(message_ref msg, bool& break_on_log)
 {
     (void)break_on_log; // default behavior is fine
 
@@ -138,6 +138,8 @@ void rlog::default_logger_fun(message_ref msg, bool& break_on_log)
 
     // flush curr streams to improve ordering
     std::fflush(stream == stdout ? stdout : stderr);
+
+    return true;
 }
 
 void rlog::experimental::set_whitelist_filter(cc::unique_function<bool(cc::string_view domain, cc::string_view message)>)
@@ -145,10 +147,20 @@ void rlog::experimental::set_whitelist_filter(cc::unique_function<bool(cc::strin
     // is ignored in the current model
 }
 
-bool rlog::detail::do_log(const domain_info& domain, verbosity::type verbosity, const location* loc, cc::string_view message)
+bool rlog::detail::do_log(const domain_info& domain, verbosity::type verbosity, location* loc, double cooldown_sec, cc::string_view message)
 {
+    auto const curr_time = std::time(nullptr);
+
+    // logging once if cooldown is -1
+    if (cooldown_sec == -1 && loc->last_log != std::time_t{})
+        return false;
+
+    // suppress log if in cooldown period
+    if (cooldown_sec > 0 && int64_t(curr_time - loc->last_log) < cooldown_sec)
+        return false;
+
     message_ref msg;
-    msg.timestamp = std::time(nullptr);
+    msg.timestamp = curr_time;
     msg.location = loc;
     msg.domain = &domain;
     msg.verbosity = verbosity;
@@ -156,17 +168,34 @@ bool rlog::detail::do_log(const domain_info& domain, verbosity::type verbosity, 
     msg.message = message;
 
     CC_ASSERT(0 <= verbosity && verbosity < rlog::verbosity::_count);
-    auto break_on_log = domain.break_on_log[verbosity];
+    auto break_on_log = false;
     break_on_log |= verbosity >= g_break_on_log_min_verbosity;
+    break_on_log |= loc->break_on_log;
+    break_on_log |= loc->break_on_log_once;
 
-    // local logger?
-    if (!g_local_logger_stack.empty())
-        g_local_logger_stack.back()(msg, break_on_log);
-    // user-defined default logger?
-    else if (g_default_logger.is_valid())
-        g_default_logger(msg, break_on_log);
-    // console fallback?
-    else
+    loc->break_on_log_once = false; // always disable after
+    loc->last_log = msg.timestamp;
+
+    // try local loggers
+    auto consumed = false;
+    for (auto i = int(g_local_logger_stack.size()) - 1; i >= 0; --i)
+    {
+        if (g_local_logger_stack[i](msg, break_on_log))
+        {
+            consumed = true;
+            break;
+        }
+    }
+    // .. try user-defined default logger
+    if (!consumed && g_default_logger.is_valid())
+    {
+        if (g_default_logger(msg, break_on_log))
+        {
+            consumed = true;
+        }
+    }
+    // .. if still not consumed, use built-in default logger
+    if (!consumed)
         default_logger_fun(msg, break_on_log);
 
     return break_on_log;

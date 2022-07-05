@@ -6,40 +6,39 @@ namespace rlog
 {
 namespace verbosity
 {
+/// Verbosity defines how relevant a log message is in increasing order
+/// there can be minimum verbosity levels compile-time and run-time
+/// per default:
+///   - TRACE is disabled compile-time
+///   - Debug is disabled run-time
+///   - everything else is enabled
 enum type : int
 {
     /// TRACE is used to provide diagnostic information verbosely and in very small steps
     /// e.g. logging in each iteration of an algorithm
-    /// per default, trace should be compile-time DISABLED (as it can and will slow down the app)
     Trace = 0,
 
     /// DEBUG is used to provide diagnostic information that usually do not matter
     /// e.g. logging the arguments to an algorithm
-    /// per default, debug should be compile-time ENABLED but runtime DISABLED
-    /// this means all message can be viewed post-mortem
     Debug = 1,
 
     /// INFO is used to log interesting information that USERS of your algorithm might want to know about
     /// e.g. the selected graphics card, filenames for large save operations, UI actions
-    /// per default, this logging is enabled
     Info = 2,
 
     /// WARNING is used to log suspicious calls / inputs
     /// e.g. loading empty files, showing empty meshes, degenerate faces
     /// while they are not strictly errors, you should minimize false positives (users will start to ignore them)
-    /// per default, this logging is enabled
     Warning = 3,
 
     /// ERRROR is used for clear errors and wrong use of APIs
     /// e.g. trying to load a nonexistant file, providing unsupported argument combinations
     /// these errors do not crash the program, but are clearly wrong
-    /// per default, this logging is enabled, will break, and will record stacktraces
     Error = 4,
 
     /// FATAL is used for errors that will, with a high probability, crash/invalidate the program
     /// e.g. failure to acquire crucial resources, out of memory
     /// fatal errors also tend to be unrecoverable with no clear way to fix them
-    /// per default, this logging is enabled, will break, and will record stacktraces
     Fatal = 5,
 
     _count
@@ -51,8 +50,6 @@ struct domain_info
     rlog::verbosity::type min_verbosity = rlog::verbosity::Info; // always first
     char const* name = "";
     char const* ansi_color_code = "\u001b[38;5;244m";
-    bool break_on_log[verbosity::_count] = {false, false, false, false, true, true};
-    bool record_stacktrace[verbosity::_count] = {false, false, false, false, true, true};
 
     static constexpr domain_info make_named(char const* name)
     {

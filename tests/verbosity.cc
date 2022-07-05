@@ -8,7 +8,12 @@ RICH_LOG_DECLARE_DOMAIN(Test);
 TEST("domain min verbosity")
 {
     cc::string msg;
-    auto _ = rlog::scoped_logger_override([&](rlog::message_ref m, bool&) { msg = m.message; });
+    auto _ = rlog::scoped_logger_override(
+        [&](rlog::message_ref m, bool&)
+        {
+            msg = m.message;
+            return true;
+        });
 
     LOG("capture me");
     CHECK(msg == "capture me");

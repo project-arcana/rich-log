@@ -14,7 +14,6 @@
  *
  *    // default logging has info verbosity and goes to Default domain
  *    // logging message is created using cc::format
- *    // use LOGP or LOGF if you only want pythonic or printf syntax
  *    LOG("created %s vertices and {} faces", v_cnt, f_cnt);
  *
  *    // for quick debugging, use the following shortcut
@@ -38,44 +37,38 @@
  *    RICH_LOG_DECLARE_DOMAIN_MV(MyDomain, Warning);
  */
 
-#define RICH_LOG_IMPL(Domain, Severity, Formatter, ...)                                                                                      \
-    do                                                                                                                                       \
-    {                                                                                                                                        \
-        if constexpr (rlog::verbosity::Severity >= rlog::domains::Domain::CompileTimeMinVerbosity)                                           \
-        {                                                                                                                                    \
-            if (rlog::verbosity::Severity >= rlog::domains::Domain::domain.min_verbosity)                                                    \
-            {                                                                                                                                \
-                static constexpr rlog::location _rlog_location = RLOG_LOCATION();                                                            \
-                if (rlog::detail::do_log(rlog::domains::Domain::domain, rlog::verbosity::Severity, &_rlog_location, Formatter(__VA_ARGS__))) \
-                    CC_DEBUG_BREAK();                                                                                                        \
-            }                                                                                                                                \
-        }                                                                                                                                    \
+#define RICH_LOG_IMPL(Domain, Severity, CooldownSec, Formatter, ...)                                                                                      \
+    do                                                                                                                                                    \
+    {                                                                                                                                                     \
+        if constexpr (rlog::verbosity::Severity >= rlog::domains::Domain::CompileTimeMinVerbosity)                                                        \
+        {                                                                                                                                                 \
+            if (rlog::verbosity::Severity >= rlog::domains::Domain::domain.min_verbosity)                                                                 \
+            {                                                                                                                                             \
+                static rlog::location _rlog_location = {CC_PRETTY_FUNC, __FILE__, __LINE__};                                                              \
+                if (rlog::detail::do_log(rlog::domains::Domain::domain, rlog::verbosity::Severity, &_rlog_location, CooldownSec, Formatter(__VA_ARGS__))) \
+                    CC_DEBUG_BREAK();                                                                                                                     \
+            }                                                                                                                                             \
+        }                                                                                                                                                 \
     } while (0) // force ;
 
 /// writes an info log message to the Default domain using cc::format (printf AND pythonic syntax)
-#define RICH_LOG(...) RICH_LOG_IMPL(Default, Info, cc::format, __VA_ARGS__)
-/// writes an info log message to the Default domain using cc::formatp (pythonic  syntax only)
-#define RICH_LOGP(...) RICH_LOG_IMPL(Default, Info, cc::formatp, __VA_ARGS__)
-/// writes an info log message to the Default domain using cc::formatf (printf syntax only)
-#define RICH_LOGF(...) RICH_LOG_IMPL(Default, Info, cc::formatf, __VA_ARGS__)
+#define RICH_LOG(...) RICH_LOG_IMPL(Default, Info, 0, cc::format, __VA_ARGS__)
 /// writes a log message with given domain and severity using cc::format
-#define RICH_LOGD(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, cc::format, __VA_ARGS__)
+#define RICH_LOGD(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, 0, cc::format, __VA_ARGS__)
+/// same as RICH_LOGD but will only log once
+#define RICH_LOGD_ONCE(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, -1, cc::format, __VA_ARGS__)
 /// convenience wrapper for LOG("<expr> = %s", <expr>)
 #define RICH_LOG_EXPR(...) RICH_LOG("%s = %s", #__VA_ARGS__, __VA_ARGS__)
 
-// TODO: do we really want to provide _WARN, _ERROR or require full domain use for that?
-//      (pt) I would prefer full domain use, so the default domain is not spammed
 
 #ifndef RICH_LOG_FORCE_MACRO_PREFIX
 
 /// writes an info log message to the Default domain using cc::format (printf AND pythonic syntax)
-#define LOG(...) RICH_LOG_IMPL(Default, Info, cc::format, __VA_ARGS__)
-/// writes an info log message to the Default domain using cc::formatp (pythonic  syntax only)
-#define LOGP(...) RICH_LOG_IMPL(Default, Info, cc::formatp, __VA_ARGS__)
-/// writes an info log message to the Default domain using cc::formatf (printf syntax only)
-#define LOGF(...) RICH_LOG_IMPL(Default, Info, cc::formatf, __VA_ARGS__)
+#define LOG(...) RICH_LOG_IMPL(Default, Info, 0, cc::format, __VA_ARGS__)
 /// writes a log message with given domain and severity using cc::format
-#define LOGD(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, cc::format, __VA_ARGS__)
+#define LOGD(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, 0, cc::format, __VA_ARGS__)
+/// same as LOGD but will only log once
+#define LOGD_ONCE(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, -1, cc::format, __VA_ARGS__)
 /// convenience wrapper for LOG("<expr> = %s", <expr>)
 #define LOG_EXPR(...) RICH_LOG("%s = %s", #__VA_ARGS__, __VA_ARGS__)
 
@@ -86,5 +79,6 @@ namespace rlog::detail
 /// NOTE: loc is a pointer to the data segment (static lifetime)
 /// TODO: we might be able to improve performance by providing a threadlocal stream_ref<char> to the formatter
 /// returns true if we want to hit a breakpoint after logging
-bool do_log(rlog::domain_info const& domain, rlog::verbosity::type verbosity, location const* loc, cc::string_view message);
+/// cooldown_sec limits log rate (0 means no limit, -1 means once, positive means minimum seconds before multiple logs)
+bool do_log(rlog::domain_info const& domain, rlog::verbosity::type verbosity, location* loc, double cooldown_sec, cc::string_view message);
 }
