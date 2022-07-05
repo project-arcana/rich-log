@@ -3,6 +3,7 @@
 #include <cstdio>
 
 #include <clean-core/macros.hh>
+#include <clean-core/span.hh>
 #include <clean-core/unique_function.hh>
 
 #include <rich-log/detail/api.hh>
@@ -79,6 +80,10 @@ RLOG_API void pop_local_logger();
 /// the default logger
 /// this can be used for custom loggers that still want the default behavior
 RLOG_API bool default_logger_fun(message_ref msg, bool& break_on_log);
+
+/// returns all registered domains
+/// NOTE: the result is invalidated when a new domain is added (e.g. DLL load or before main)
+RLOG_API cc::span<domain_info*> get_domains();
 
 /// helper struct for a threadlocal scoped log overwrite
 /// Usage:

@@ -103,7 +103,9 @@ struct domain_info
     }                                                            \
     }                                                            \
     CC_FORCE_SEMICOLON
-#define RICH_LOG_DEFINE_DOMAIN(Name) ::rlog::domain_info rlog::domains::Name::domain = ::rlog::domain_info::make_named(#Name) // force ;
+#define RICH_LOG_DEFINE_DOMAIN(Name)                                                          \
+    ::rlog::domain_info rlog::domains::Name::domain = ::rlog::domain_info::make_named(#Name); \
+    static ::rlog::detail::domain_registerer CC_MACRO_JOIN(_rlog_register_domain, __COUNTER__)(&rlog::domains::Name::domain) // force ;
 
 // this namespace is user-extensible
 namespace rlog::domains
@@ -122,6 +124,14 @@ namespace rlog::domains
 //
 //   extern domain_info domain;
 //   }
+}
+
+namespace rlog::detail
+{
+struct domain_registerer
+{
+    domain_registerer(domain_info* domain);
+};
 }
 
 // declare a default domain

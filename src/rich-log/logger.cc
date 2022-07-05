@@ -257,3 +257,13 @@ void rlog::pop_local_logger()
     CC_ASSERT(!g_local_logger_stack.empty() && "no local logger on the stack. scope mismatch? or wrong thread?");
     g_local_logger_stack.pop_back();
 }
+
+static cc::vector<rlog::domain_info*>& g_domains()
+{
+    static cc::vector<rlog::domain_info*> v;
+    return v;
+}
+
+rlog::detail::domain_registerer::domain_registerer(domain_info* domain) { g_domains().push_back(domain); }
+
+cc::span<rlog::domain_info*> rlog::get_domains() { return g_domains(); }
