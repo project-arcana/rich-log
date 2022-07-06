@@ -1,7 +1,8 @@
 #pragma once
 
-#include <cstdio>
+#include <cstdint>
 
+#include <clean-core/fwd.hh>
 #include <clean-core/macros.hh>
 #include <clean-core/span.hh>
 #include <clean-core/unique_function.hh>
@@ -81,9 +82,9 @@ RLOG_API void pop_local_logger();
 /// this can be used for custom loggers that still want the default behavior
 RLOG_API bool default_logger_fun(message_ref msg, bool& break_on_log);
 
-/// returns all registered domains
-/// NOTE: the result is invalidated when a new domain is added (e.g. DLL load or before main)
-RLOG_API cc::span<domain_info*> get_domains();
+/// helper to iterate all existing domains
+/// func: receives a reference to the current domain, return false to break the loop
+RLOG_API uint32_t iterate_all_domains(cc::function_ref<bool(domain_info&)> func);
 
 /// helper struct for a threadlocal scoped log overwrite
 /// Usage:

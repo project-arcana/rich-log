@@ -1,5 +1,6 @@
 #pragma once
 
+#include <rich-log/detail/api.hh>
 #include <rich-log/domain.hh>
 #include <rich-log/location.hh>
 
@@ -80,5 +81,5 @@ namespace rlog::detail
 /// TODO: we might be able to improve performance by providing a threadlocal stream_ref<char> to the formatter
 /// returns true if we want to hit a breakpoint after logging
 /// cooldown_sec limits log rate (0 means no limit, -1 means once, positive means minimum seconds before multiple logs)
-bool do_log(rlog::domain_info const& domain, rlog::verbosity::type verbosity, location* loc, double cooldown_sec, cc::string_view message);
+RLOG_API bool do_log(rlog::domain_info const& domain, rlog::verbosity::type verbosity, location* loc, double cooldown_sec, cc::string_view message);
 }

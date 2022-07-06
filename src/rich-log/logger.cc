@@ -93,7 +93,7 @@ bool rlog::default_logger_fun(message_ref msg, bool& break_on_log)
         verbosity_name = "FATAL ";
         break;
 
-    case rlog::verbosity::_count: // silence warning
+    default: // silence warning
         break;
     }
 
@@ -142,6 +142,26 @@ bool rlog::default_logger_fun(message_ref msg, bool& break_on_log)
     return true;
 }
 
+uint32_t rlog::iterate_all_domains(cc::function_ref<bool(domain_info&)> func)
+{
+    uint32_t num = 0;
+
+    domain_info* cursor = domain_info::get_first_domain();
+    while (cursor)
+    {
+        ++num;
+
+        if (!func(*cursor))
+        {
+            break;
+        }
+
+        cursor = cursor->get_next_domain();
+    }
+
+    return num;
+}
+
 void rlog::experimental::set_whitelist_filter(cc::unique_function<bool(cc::string_view domain, cc::string_view message)>)
 {
     // is ignored in the current model
@@ -167,7 +187,7 @@ bool rlog::detail::do_log(const domain_info& domain, verbosity::type verbosity, 
     msg.thread_name = tls_thread_name;
     msg.message = message;
 
-    CC_ASSERT(0 <= verbosity && verbosity < rlog::verbosity::_count);
+    CC_ASSERT(0 < verbosity && verbosity < rlog::verbosity::_EndRange);
     auto break_on_log = false;
     break_on_log |= verbosity >= g_break_on_log_min_verbosity;
     break_on_log |= loc->break_on_log;
@@ -257,13 +277,3 @@ void rlog::pop_local_logger()
     CC_ASSERT(!g_local_logger_stack.empty() && "no local logger on the stack. scope mismatch? or wrong thread?");
     g_local_logger_stack.pop_back();
 }
-
-static cc::vector<rlog::domain_info*>& g_domains()
-{
-    static cc::vector<rlog::domain_info*> v;
-    return v;
-}
-
-rlog::detail::domain_registerer::domain_registerer(domain_info* domain) { g_domains().push_back(domain); }
-
-cc::span<rlog::domain_info*> rlog::get_domains() { return g_domains(); }

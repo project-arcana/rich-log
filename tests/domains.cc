@@ -14,17 +14,20 @@ TEST("domains")
     auto has_test = false;
     auto has_other = false;
 
-    for (auto d : rlog::get_domains())
-    {
-        auto name = cc::string_view(d->name);
+    rlog::iterate_all_domains(
+        [&](rlog::domain_info& d)
+        {
+            auto name = cc::string_view(d.name);
 
-        if (name == "Default")
-            has_default = true;
-        else if (name == "Test")
-            has_test = true;
-        else if (name == "Other")
-            has_other = true;
-    }
+            if (name == "Default")
+                has_default = true;
+            else if (name == "Test")
+                has_test = true;
+            else if (name == "Other")
+                has_other = true;
+
+            return true;
+        });
 
     CHECK(has_default);
     CHECK(has_other);

@@ -1,6 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 #include <clean-core/macros.hh>
+
+#include <rich-log/detail/api.hh>
 
 namespace rlog
 {
@@ -14,49 +18,62 @@ namespace verbosity
 ///   - everything else is enabled
 enum type : int
 {
+    _None = 0,
+
     /// TRACE is used to provide diagnostic information verbosely and in very small steps
     /// e.g. logging in each iteration of an algorithm
-    Trace = 0,
+    Trace,
 
     /// DEBUG is used to provide diagnostic information that usually do not matter
     /// e.g. logging the arguments to an algorithm
-    Debug = 1,
+    Debug,
 
     /// INFO is used to log interesting information that USERS of your algorithm might want to know about
     /// e.g. the selected graphics card, filenames for large save operations, UI actions
-    Info = 2,
+    Info,
 
     /// WARNING is used to log suspicious calls / inputs
     /// e.g. loading empty files, showing empty meshes, degenerate faces
     /// while they are not strictly errors, you should minimize false positives (users will start to ignore them)
-    Warning = 3,
+    Warning,
 
     /// ERRROR is used for clear errors and wrong use of APIs
     /// e.g. trying to load a nonexistant file, providing unsupported argument combinations
     /// these errors do not crash the program, but are clearly wrong
-    Error = 4,
+    Error,
 
     /// FATAL is used for errors that will, with a high probability, crash/invalidate the program
     /// e.g. failure to acquire crucial resources, out of memory
     /// fatal errors also tend to be unrecoverable with no clear way to fix them
-    Fatal = 5,
+    Fatal,
 
-    _count
+    _EndRange,
+    _NumVerbosities = _EndRange - 1
 };
 }
 
-struct domain_info
+struct RLOG_API domain_info
 {
-    rlog::verbosity::type min_verbosity = rlog::verbosity::Info; // always first
-    char const* name = "";
-    char const* ansi_color_code = "\u001b[38;5;244m";
+    rlog::verbosity::type min_verbosity = rlog::verbosity::_None;
+    rlog::verbosity::type const compile_time_min_verbosity = rlog::verbosity::_None;
 
-    static constexpr domain_info make_named(char const* name)
-    {
-        domain_info di;
-        di.name = name;
-        return di;
-    }
+    char const* const name = nullptr;
+    char const* const description = nullptr;
+    char const* const ansi_color_code = nullptr;
+    uint64_t name_hash = 0;
+
+    domain_info(char const* name, char const* desc, char const* ansi_color, rlog::verbosity::type min_verbosity, int compile_min_verbosity);
+
+    static domain_info* get_first_domain();
+    static domain_info* find_domain(char const* name);
+
+    domain_info* get_next_domain() const { return next_domain; }
+
+private:
+    domain_info(domain_info const&) = delete;
+    domain_info(domain_info&&) = delete;
+
+    domain_info* next_domain = nullptr;
 };
 }
 
@@ -88,24 +105,30 @@ struct domain_info
 ///
 ///     (this should be externally synchronized, otherwise it might create a race condition)
 ///
-#define RICH_LOG_DECLARE_DOMAIN(Name) RICH_LOG_DECLARE_DOMAIN_MV(Name, Debug)
-#define RICH_LOG_DECLARE_DOMAIN_MV(Name, min_verbosity)          \
-    namespace rlog::domains                                      \
-    {                                                            \
-    namespace Name                                               \
-    {                                                            \
-    enum : int                                                   \
-    {                                                            \
-        CompileTimeMinVerbosity = rlog::verbosity::min_verbosity \
-    };                                                           \
-                                                                 \
-    extern rlog::domain_info domain;                             \
-    }                                                            \
-    }                                                            \
+#define RICH_LOG_DECLARE_DOMAIN(Name) RICH_LOG_DECLARE_DOMAIN_EX(Name, Debug, extern)
+
+#define RICH_LOG_DECLARE_DOMAIN_MV(Name, MinVerbosity) RICH_LOG_DECLARE_DOMAIN_EX(Name, MinVerbosity, extern)
+
+#define RICH_LOG_DECLARE_DOMAIN_EX(Name, MinVerbosity, APIPrefix) \
+    namespace rlog::domains                                       \
+    {                                                             \
+    namespace Name                                                \
+    {                                                             \
+    enum : int                                                    \
+    {                                                             \
+        CompileTimeMinVerbosity = rlog::verbosity::MinVerbosity   \
+    };                                                            \
+                                                                  \
+    APIPrefix rlog::domain_info domain;                           \
+    }                                                             \
+    }                                                             \
     CC_FORCE_SEMICOLON
-#define RICH_LOG_DEFINE_DOMAIN(Name)                                                          \
-    ::rlog::domain_info rlog::domains::Name::domain = ::rlog::domain_info::make_named(#Name); \
-    static ::rlog::detail::domain_registerer CC_MACRO_JOIN(_rlog_register_domain, __COUNTER__)(&rlog::domains::Name::domain) // force ;
+
+
+#define RICH_LOG_DEFINE_DOMAIN_EX(Name, Description, ANSIColor, MinRuntimeVerbosity) \
+    ::rlog::domain_info rlog::domains::Name::domain(#Name, Description, ANSIColor, ::rlog::verbosity::MinRuntimeVerbosity, rlog::domains::Name::CompileTimeMinVerbosity)
+
+#define RICH_LOG_DEFINE_DOMAIN(Name) RICH_LOG_DEFINE_DOMAIN_EX(Name, nullptr, "\u001b[38;5;244m", Info)
 
 // this namespace is user-extensible
 namespace rlog::domains
@@ -126,13 +149,5 @@ namespace rlog::domains
 //   }
 }
 
-namespace rlog::detail
-{
-struct domain_registerer
-{
-    domain_registerer(domain_info* domain);
-};
-}
-
-// declare a default domain
-RICH_LOG_DECLARE_DOMAIN(Default);
+// declare the default domain
+RICH_LOG_DECLARE_DOMAIN_EX(Default, Debug, RLOG_API extern);
