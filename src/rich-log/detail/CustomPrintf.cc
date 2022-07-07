@@ -135,7 +135,7 @@ size_t RewriteFormatString(char* __restrict pOutBuffer, size_t outBufferSize, ch
 
         if (bIsSpecifierStarted && *p != '%' && *p != '\0')
         {
-            CC_ASSERT(nextArgIndex < numArgs && "More specifiers than arguments");
+            // CC_ASSERT(nextArgIndex < numArgs && "More specifiers than arguments");
 
             // this is the start of a non-generic non-escaped printf specifier
             nextArgIndex++;
