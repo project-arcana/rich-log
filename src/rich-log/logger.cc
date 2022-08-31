@@ -112,7 +112,7 @@ bool rlog::default_logger_fun(message_ref msg, bool& break_on_log)
                  timebuffer, verbosity_color_code, verbosity_name);
 
     // domain, optional
-    if (msg.domain != &rlog::domains::Default::domain)
+    if (msg.domain != &Log::Default::domain)
     {
         std::fprintf(stream,                   //
                      "%s%s " RLOG_COLOR_RESET, //

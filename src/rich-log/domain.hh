@@ -2,6 +2,8 @@
 
 #include <clean-core/macros.hh>
 
+#include <rich-log/detail/api.hh>
+
 namespace rlog
 {
 namespace verbosity
@@ -63,68 +65,65 @@ struct domain_info
 /// declares a logging domain
 /// these names are identifiers of _namespaces_
 /// so hierarchies can be formed by using ::
-///
-/// the RICH_LOG_DECLARE_DOMAIN_MV version allows to specify a _compiletime_ min verbosity
-/// i.e. all logging calls with less verbosity will not generate code
-///     (and, of course, cannot be enabled at runtime)
-/// the default is Debug
+/// they are placed within the namespace they reside in. intended use is the same namespace as the corresponding library
 ///
 /// Usage:
 ///
-///   RICH_LOG_DECLARE_DOMAIN(MeshImporter::FBX);
-///   RICH_LOG_DECLARE_DOMAIN_MV(MeshImporter::FBX, debug);
+///   namespace MyEngine
+///   {
+///       RICH_LOG_DECLARE_DEFAULT_DOMAIN();
+///       RICH_LOG_DECLARE_DOMAIN(MeshImporter::FBX);
+///   }
 ///
 /// Note:
 ///
 ///   in some .cc, you need to add:
-///   RICH_LOG_DEFINE_DOMAIN(MeshImporter::FBX);
+///   namespace MyEngine
+///   {
+///       RICH_LOG_DEFINE_DEFAULT_DOMAIN("MyEngine");
+///       RICH_LOG_DEFINE_DOMAIN(MeshImporter::FBX, "MyEngine::MeshImporter::FBX");
+///   }
 ///
 ///   TODO: how can the struct be custom initialized?
 ///
 ///   Domain settings can be changed anytime, e.g.:
 ///
-///     rlog::domains::Default::domain.min_verbosity = rlog::verbosity::Debug;
-///     rlog::domains::Default::domain.break_on_log[rlog::verbosity::Warning] = true;
+///     MyEngine::Log::Default::domain.min_verbosity = rlog::verbosity::Debug;
+///     MyEngine::Log::Default::domain.break_on_log[rlog::verbosity::Warning] = true;
 ///
 ///     (this should be externally synchronized, otherwise it might create a race condition)
 ///
-#define RICH_LOG_DECLARE_DOMAIN(Name) RICH_LOG_DECLARE_DOMAIN_MV(Name, Debug)
-#define RICH_LOG_DECLARE_DOMAIN_MV(Name, min_verbosity)          \
-    namespace rlog::domains                                      \
-    {                                                            \
-    namespace Name                                               \
-    {                                                            \
-    enum : int                                                   \
-    {                                                            \
-        CompileTimeMinVerbosity = rlog::verbosity::min_verbosity \
-    };                                                           \
-                                                                 \
-    extern rlog::domain_info domain;                             \
-    }                                                            \
-    }                                                            \
+#define RICH_LOG_DECLARE_DEFAULT_DOMAIN() RICH_LOG_DECLARE_DOMAIN_DETAIL(Default, Trace, extern)
+#define RICH_LOG_DECLARE_DOMAIN(Name) RICH_LOG_DECLARE_DOMAIN_DETAIL(Name, Trace, extern)
+#define RICH_LOG_DECLARE_DOMAIN_DETAIL(Name, MinVerbosity, APIPrefix) \
+    namespace Log                                                     \
+    {                                                                 \
+    namespace Name                                                    \
+    {                                                                 \
+    enum : int                                                        \
+    {                                                                 \
+        CompileTimeMinVerbosity = rlog::verbosity::MinVerbosity       \
+    };                                                                \
+                                                                      \
+    APIPrefix ::rlog::domain_info domain;                             \
+    }                                                                 \
+    }                                                                 \
+    RICH_LOG_IMPL_INJECT_DOMAIN_FOR_INTELLISENSE(Name)                \
     CC_FORCE_SEMICOLON
-#define RICH_LOG_DEFINE_DOMAIN(Name)                                                          \
-    ::rlog::domain_info rlog::domains::Name::domain = ::rlog::domain_info::make_named(#Name); \
-    static ::rlog::detail::domain_registerer CC_MACRO_JOIN(_rlog_register_domain, __COUNTER__)(&rlog::domains::Name::domain) // force ;
 
-// this namespace is user-extensible
-namespace rlog::domains
-{
-// use RICH_LOG_DECLARE_DOMAIN
-//  or RICH_LOG_DECLARE_DOMAIN_MV
-//
-// e.g. 'RICH_LOG_DECLARE_DOMAIN_MV(My::Domain, debug);' will add:
-//
-//   namespace My::Domain
-//   {
-//   enum : int
-//   {
-//       CompileTimeMinVerbosity = rlog::verbosity::Debug
-//   };
-//
-//   extern domain_info domain;
-//   }
-}
+#define RICH_LOG_DEFINE_DEFAULT_DOMAIN(NameStr) RICH_LOG_DEFINE_DOMAIN(Default, NameStr)
+#define RICH_LOG_DEFINE_DOMAIN(Name, NameStr)                                         \
+    ::rlog::domain_info Log::Name::domain = ::rlog::domain_info::make_named(NameStr); \
+    static ::rlog::detail::domain_registerer CC_MACRO_JOIN(_rlog_register_domain, __COUNTER__)(&Log::Name::domain) // force ;
+
+#ifdef __INTELLISENSE__
+#define RICH_LOG_IMPL_INJECT_DOMAIN_FOR_INTELLISENSE(name) \
+    namespace name                                         \
+    {                                                      \
+    }
+#else
+#define RICH_LOG_IMPL_INJECT_DOMAIN_FOR_INTELLISENSE(name)
+#endif
 
 namespace rlog::detail
 {
@@ -135,4 +134,4 @@ struct domain_registerer
 }
 
 // declare a default domain
-RICH_LOG_DECLARE_DOMAIN(Default);
+RICH_LOG_DECLARE_DOMAIN_DETAIL(Default, Trace, RLOG_API extern);

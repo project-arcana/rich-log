@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdio>
+#include <cstdint>
 
 #include <clean-core/macros.hh>
 #include <clean-core/span.hh>

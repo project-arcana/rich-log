@@ -3,7 +3,7 @@
 #include <rich-log/log.hh>
 #include <rich-log/logger.hh>
 
-RICH_LOG_DECLARE_DOMAIN(Test);
+RICH_LOG_DECLARE_DOMAIN_DETAIL(Test, Debug, extern);
 
 TEST("domain min verbosity")
 {
@@ -21,7 +21,7 @@ TEST("domain min verbosity")
     LOGD(Test, Debug, "me not logged");
     CHECK(msg == "capture me");
 
-    rlog::domains::Test::domain.min_verbosity = rlog::verbosity::Debug;
+    Log::Test::domain.min_verbosity = rlog::verbosity::Debug;
 
     LOGD(Test, Debug, "now you see me");
     CHECK(msg == "now you see me");
@@ -29,7 +29,7 @@ TEST("domain min verbosity")
     LOGD(Test, Trace, "still hidden");
     CHECK(msg == "now you see me");
 
-    rlog::domains::Test::domain.min_verbosity = rlog::verbosity::Trace;
+    Log::Test::domain.min_verbosity = rlog::verbosity::Trace;
 
     LOGD(Test, Trace, "nope, this removed compile-time");
     CHECK(msg == "now you see me");

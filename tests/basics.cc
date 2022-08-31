@@ -4,7 +4,7 @@
 #include <rich-log/logger.hh>
 
 RICH_LOG_DECLARE_DOMAIN(Test);
-RICH_LOG_DEFINE_DOMAIN(Test);
+RICH_LOG_DEFINE_DOMAIN(Test, "test");
 
 TEST("basic logging", disabled) // call directly to run this test (it will print to console)
 {
