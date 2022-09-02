@@ -1,11 +1,9 @@
 #pragma once
 
 #include <rich-log/detail/api.hh>
+#include <rich-log/detail/format.hh>
 #include <rich-log/domain.hh>
 #include <rich-log/location.hh>
-
-// TODO: maybe provide a second log header that does not include cc::format?
-#include <clean-core/format.hh>
 
 /**
  *
@@ -14,7 +12,7 @@
  * Quickstart:
  *
  *    // default logging has info verbosity and goes to Default domain
- *    // logging message is created using cc::format
+ *    // logging message is created using rlog::detail::format
  *    LOG("created %s vertices and {} faces", v_cnt, f_cnt);
  *
  *    // for quick debugging, use the following shortcut
@@ -52,32 +50,32 @@
         }                                                                                                                                       \
     } while (0) // force ;
 
-/// writes an info log message to the Default domain using cc::format (printf AND pythonic syntax)
-#define RICH_LOG(...) RICH_LOG_IMPL(Default, Info, 0, cc::format, __VA_ARGS__)
+/// writes an info log message to the Default domain using rlog::detail::format (printf AND pythonic syntax)
+#define RICH_LOG(...) RICH_LOG_IMPL(Default, Info, 0, rlog::detail::format, __VA_ARGS__)
 /// same as log but with Warning severity
-#define RICH_LOG_WARN(...) RICH_LOG_IMPL(Default, Warning, 0, cc::format, __VA_ARGS__)
+#define RICH_LOG_WARN(...) RICH_LOG_IMPL(Default, Warning, 0, rlog::detail::format, __VA_ARGS__)
 /// same as log but with Error severity
-#define RICH_LOG_ERROR(...) RICH_LOG_IMPL(Default, Error, 0, cc::format, __VA_ARGS__)
-/// writes a log message with given domain and severity using cc::format
-#define RICH_LOGD(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, 0, cc::format, __VA_ARGS__)
+#define RICH_LOG_ERROR(...) RICH_LOG_IMPL(Default, Error, 0, rlog::detail::format, __VA_ARGS__)
+/// writes a log message with given domain and severity using rlog::detail::format
+#define RICH_LOGD(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, 0, rlog::detail::format, __VA_ARGS__)
 /// same as RICH_LOGD but will only log once
-#define RICH_LOGD_ONCE(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, -1, cc::format, __VA_ARGS__)
+#define RICH_LOGD_ONCE(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, -1, rlog::detail::format, __VA_ARGS__)
 /// convenience wrapper for LOG("<expr> = %s", <expr>)
 #define RICH_LOG_EXPR(...) RICH_LOG("%s = %s", #__VA_ARGS__, __VA_ARGS__)
 
 
 #ifndef RICH_LOG_FORCE_MACRO_PREFIX
 
-/// writes an info log message to the Default domain using cc::format (printf AND pythonic syntax)
-#define LOG(...) RICH_LOG_IMPL(Default, Info, 0, cc::format, __VA_ARGS__)
+/// writes an info log message to the Default domain using rlog::detail::format (printf AND pythonic syntax)
+#define LOG(...) RICH_LOG_IMPL(Default, Info, 0, rlog::detail::format, __VA_ARGS__)
 /// same as log but with Warning severity
-#define LOG_WARN(...) RICH_LOG_IMPL(Default, Warning, 0, cc::format, __VA_ARGS__)
+#define LOG_WARN(...) RICH_LOG_IMPL(Default, Warning, 0, rlog::detail::format, __VA_ARGS__)
 /// same as log but with Error severity
-#define LOG_ERROR(...) RICH_LOG_IMPL(Default, Error, 0, cc::format, __VA_ARGS__)
-/// writes a log message with given domain and severity using cc::format
-#define LOGD(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, 0, cc::format, __VA_ARGS__)
+#define LOG_ERROR(...) RICH_LOG_IMPL(Default, Error, 0, rlog::detail::format, __VA_ARGS__)
+/// writes a log message with given domain and severity using rlog::detail::format
+#define LOGD(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, 0, rlog::detail::format, __VA_ARGS__)
 /// same as LOGD but will only log once
-#define LOGD_ONCE(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, -1, cc::format, __VA_ARGS__)
+#define LOGD_ONCE(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, -1, rlog::detail::format, __VA_ARGS__)
 /// convenience wrapper for LOG("<expr> = %s", <expr>)
 #define LOG_EXPR(...) RICH_LOG("%s = %s", #__VA_ARGS__, __VA_ARGS__)
 
