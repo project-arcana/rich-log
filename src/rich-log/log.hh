@@ -39,7 +39,7 @@
 #define RICH_LOG_IMPL(Domain, Severity, CooldownSec, Formatter, ...)                                                                            \
     do                                                                                                                                          \
     {                                                                                                                                           \
-        if constexpr (rlog::verbosity::Severity >= Log::Domain::CompileTimeMinVerbosity)                                                        \
+        if constexpr (rlog::verbosity::Severity >= rlog::verbosity::type(Log::Domain::CompileTimeMinVerbosity))                                 \
         {                                                                                                                                       \
             if (rlog::verbosity::Severity >= Log::Domain::domain.min_verbosity)                                                                 \
             {                                                                                                                                   \
