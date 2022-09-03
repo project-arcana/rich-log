@@ -41,6 +41,10 @@ struct formatter
         {
             s << cc::string_view(v.to_string());
         }
+        else if constexpr (cc::detail::has_member_toStdString<T>)
+        {
+            s << cc::string_view(v.toStdString());
+        }
         else if constexpr (rf::has_to_string<T>)
         {
             // TODO: rf::to_string with args and streams
