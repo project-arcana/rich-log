@@ -88,8 +88,9 @@ RLOG_API cc::span<domain_info*> get_domains();
 /// helper struct for a threadlocal scoped log overwrite
 /// Usage:
 ///
-///   auto _ = rlog::scoped_logger_override([](rlog::message_ref msg) {
+///   auto _ = rlog::scoped_logger_override([](rlog::message_ref msg, bool& break_on_log) {
 ///       custom_log(msg.message);
+///       return true; // consumed
 ///   });
 ///
 struct RLOG_API scoped_logger_override
@@ -102,5 +103,25 @@ struct RLOG_API scoped_logger_override
     scoped_logger_override& operator=(scoped_logger_override&&) = delete;
     scoped_logger_override(scoped_logger_override const&) = delete;
     scoped_logger_override& operator=(scoped_logger_override const&) = delete;
+};
+
+/// helper struct for a threadlocal scoped log silence
+/// Usage:
+///
+///    auto _ = rlog::scoped_logger_silence{}; // no logs in this scope
+///
+struct RLOG_API scoped_logger_silence
+{
+    [[nodiscard]] explicit scoped_logger_silence()
+    {
+        push_local_logger([](rlog::message_ref, bool&) { return true; });
+    }
+
+    ~scoped_logger_silence() { pop_local_logger(); }
+
+    scoped_logger_silence(scoped_logger_silence&&) = delete;
+    scoped_logger_silence& operator=(scoped_logger_silence&&) = delete;
+    scoped_logger_silence(scoped_logger_silence const&) = delete;
+    scoped_logger_silence& operator=(scoped_logger_silence const&) = delete;
 };
 }
