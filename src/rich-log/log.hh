@@ -70,8 +70,12 @@
 #define LOG(...) RICH_LOG_IMPL(Default, Info, 0, rlog::detail::format, __VA_ARGS__)
 /// same as log but with Warning severity
 #define LOG_WARN(...) RICH_LOG_IMPL(Default, Warning, 0, rlog::detail::format, __VA_ARGS__)
+/// same as log but with Warning severity and only once
+#define LOG_WARN_ONCE(...) RICH_LOG_IMPL(Default, Warning, -1, rlog::detail::format, __VA_ARGS__)
 /// same as log but with Error severity
 #define LOG_ERROR(...) RICH_LOG_IMPL(Default, Error, 0, rlog::detail::format, __VA_ARGS__)
+/// same as log but with Error severity and only once
+#define LOG_ERROR_ONCE(...) RICH_LOG_IMPL(Default, Error, -1, rlog::detail::format, __VA_ARGS__)
 /// writes a log message with given domain and severity using rlog::detail::format
 #define LOGD(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, 0, rlog::detail::format, __VA_ARGS__)
 /// same as LOGD but will only log once
