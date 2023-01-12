@@ -43,7 +43,7 @@
         {                                                                                                                                       \
             if (rlog::verbosity::Severity >= Log::Domain::domain.min_verbosity)                                                                 \
             {                                                                                                                                   \
-                static rlog::location _rlog_location = {CC_PRETTY_FUNC, __FILE__, __LINE__};                                                    \
+                static rlog::location _rlog_location = DETAIL_RICH_LOG_MAKE_LOCATION;                                                           \
                 if (rlog::detail::do_log(Log::Domain::domain, rlog::verbosity::Severity, &_rlog_location, CooldownSec, Formatter(__VA_ARGS__))) \
                     CC_DEBUG_BREAK();                                                                                                           \
             }                                                                                                                                   \
@@ -62,6 +62,18 @@
 #define RICH_LOGD_ONCE(Domain, Severity, ...) RICH_LOG_IMPL(Domain, Severity, -1, rlog::detail::format, __VA_ARGS__)
 /// convenience wrapper for LOG("<expr> = %s", <expr>)
 #define RICH_LOG_EXPR(...) RICH_LOG("%s = %s", #__VA_ARGS__, __VA_ARGS__)
+
+#ifdef CC_RELEASE
+#define DETAIL_RICH_LOG_MAKE_LOCATION \
+    {                                 \
+        "", "", 0                     \
+    }
+#else
+#define DETAIL_RICH_LOG_MAKE_LOCATION      \
+    {                                      \
+        CC_PRETTY_FUNC, __FILE__, __LINE__ \
+    }
+#endif
 
 
 #ifndef RICH_LOG_FORCE_MACRO_PREFIX
