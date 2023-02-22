@@ -127,7 +127,7 @@ struct domain_info
 
 namespace rlog::detail
 {
-struct domain_registerer
+struct RLOG_API domain_registerer
 {
     domain_registerer(domain_info* domain);
 };
