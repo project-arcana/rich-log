@@ -1,18 +1,22 @@
 #pragma once
 
+#include <cstdint>
+#include <ctime>
+
 #include <clean-core/macros.hh>
 
 namespace rlog
 {
-// NOTE: std::source_location can eventually replace this
-// which also removes the need for macros
 struct location
 {
-    char const* function;
-    char const* file;
-    int line;
-};
+    // constant information about this location
+    char const* const function;
+    char const* const file;
+    int const line;
 
-#define RLOG_LOCATION() \
-    ::rlog::location { CC_PRETTY_FUNC, __FILE__, __LINE__ }
+    // runtime information for per-location features
+    std::time_t last_log = {};
+    bool break_on_log = false;
+    bool break_on_log_once = false;
+};
 }
