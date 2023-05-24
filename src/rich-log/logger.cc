@@ -135,6 +135,8 @@ bool rlog::default_logger_fun(message_ref msg, bool& break_on_log)
 
         std::fprintf(stream, "%.*s\n", int(line.size()), line.data());
     }
+    if (first_line) // empty msg?
+        std::fprintf(stream, "\n");
 
     // flush curr streams to improve ordering
     std::fflush(stream == stdout ? stdout : stderr);
