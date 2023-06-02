@@ -35,20 +35,20 @@ struct formatter
         }
         else if constexpr (cc::detail::has_to_string<T>)
         {
-            s << cc::string_view(to_string(v));
+            to_string(s, cc::string_view(to_string(v)), fmt_args);
         }
         else if constexpr (cc::detail::has_member_to_string<T>)
         {
-            s << cc::string_view(v.to_string());
+            to_string(s, cc::string_view(v.to_string()), fmt_args);
         }
         else if constexpr (cc::detail::has_member_toStdString<T>)
         {
-            s << cc::string_view(v.toStdString());
+            to_string(s, cc::string_view(v.toStdString()), fmt_args);
         }
         else if constexpr (rf::has_to_string<T>)
         {
             // TODO: rf::to_string with args and streams
-            s << rf::to_string(v);
+            to_string(s, rf::to_string(v), fmt_args);
         }
         else
         {
