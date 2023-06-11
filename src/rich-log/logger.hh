@@ -109,19 +109,28 @@ struct RLOG_API scoped_logger_override
 /// Usage:
 ///
 ///    auto _ = rlog::scoped_logger_silence{}; // no logs in this scope
+///    auto _ = rlog::scoped_logger_silence{flag}; // no logs in this scope if flag is true
 ///
 struct RLOG_API scoped_logger_silence
 {
-    [[nodiscard]] explicit scoped_logger_silence()
+    [[nodiscard]] explicit scoped_logger_silence(bool do_silence = true) : do_silence(do_silence)
     {
-        push_local_logger([](rlog::message_ref, bool&) { return true; });
+        if (do_silence)
+            push_local_logger([](rlog::message_ref, bool&) { return true; });
     }
 
-    ~scoped_logger_silence() { pop_local_logger(); }
+    ~scoped_logger_silence()
+    {
+        if (do_silence)
+            pop_local_logger();
+    }
 
     scoped_logger_silence(scoped_logger_silence&&) = delete;
     scoped_logger_silence& operator=(scoped_logger_silence&&) = delete;
     scoped_logger_silence(scoped_logger_silence const&) = delete;
     scoped_logger_silence& operator=(scoped_logger_silence const&) = delete;
+
+private:
+    bool do_silence;
 };
 }
