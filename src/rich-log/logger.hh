@@ -113,10 +113,11 @@ struct RLOG_API scoped_logger_override
 ///
 struct RLOG_API scoped_logger_silence
 {
-    [[nodiscard]] explicit scoped_logger_silence(bool do_silence = true) : do_silence(do_silence)
+    [[nodiscard]] explicit scoped_logger_silence(bool do_silence = true, verbosity::type allow_above_verbosity = verbosity::Fatal)
+      : do_silence(do_silence)
     {
         if (do_silence)
-            push_local_logger([](rlog::message_ref, bool&) { return true; });
+            push_local_logger([v = allow_above_verbosity](rlog::message_ref m, bool&) { return m.verbosity <= v; });
     }
 
     ~scoped_logger_silence()
