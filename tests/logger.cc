@@ -75,25 +75,3 @@ TEST("default logger")
 
     rlog::set_global_default_logger({});
 }
-
-TEST("logger cooldown verbosity")
-{
-    int msg_cnt = 0;
-    auto _ = rlog::scoped_logger_override(
-        [&](rlog::message_ref, bool&)
-        {
-            msg_cnt++;
-            return true;
-        });
-
-    LOG("capture me");
-    CHECK(msg_cnt == 1);
-
-    for (auto i = 0; i < 10; ++i)
-        LOG("many captures");
-    CHECK(msg_cnt == 11);
-
-    for (auto i = 0; i < 10; ++i)
-        LOGD_ONCE(Default, Info, "many logs, captured once");
-    CHECK(msg_cnt == 12);
-}

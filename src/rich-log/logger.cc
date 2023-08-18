@@ -149,16 +149,11 @@ void rlog::experimental::set_whitelist_filter(cc::unique_function<bool(cc::strin
     // is ignored in the current model
 }
 
-bool rlog::detail::do_log(const domain_info& domain, verbosity::type verbosity, location* loc, double cooldown_sec, cc::string_view message)
+bool rlog::detail::do_log(const domain_info& domain, verbosity::type verbosity, location* loc, rlog::rate::log_rate_limiter* rate_limiter, cc::string_view message)
 {
     auto const curr_time = std::time(nullptr);
 
-    // logging once if cooldown is -1
-    if (cooldown_sec == -1 && loc->last_log != std::time_t{})
-        return false;
-
-    // suppress log if in cooldown period
-    if (cooldown_sec > 0 && int64_t(curr_time - loc->last_log) < cooldown_sec)
+    if (rate_limiter && !rate_limiter->try_log())
         return false;
 
     message_ref msg;
