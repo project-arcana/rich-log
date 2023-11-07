@@ -82,6 +82,8 @@
 
 /// writes an info log message to the Default domain using rlog::detail::format (printf AND pythonic syntax)
 #define LOG(...) RICH_LOG_IMPL(Default, Info, nullptr, rlog::detail::format, __VA_ARGS__)
+/// same as log but only once
+#define LOG_ONCE(Limiter, ...) RICH_LOG_IMPL(Default, Info, &Limiter, rlog::detail::format, __VA_ARGS__)
 /// same as log but with Warning severity
 #define LOG_WARN(...) RICH_LOG_IMPL(Default, Warning, nullptr, rlog::detail::format, __VA_ARGS__)
 /// same as log but with Warning severity and only once
