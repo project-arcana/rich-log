@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdio>
 
 #include <clean-core/macros.hh>
 #include <clean-core/span.hh>
@@ -79,7 +80,7 @@ RLOG_API void pop_local_logger();
 
 /// the default logger
 /// this can be used for custom loggers that still want the default behavior
-RLOG_API bool default_logger_fun(message_ref msg, bool& break_on_log);
+RLOG_API bool default_logger_fun(message_ref msg, bool& break_on_log, FILE* forced_stream = nullptr);
 
 /// returns all registered domains
 /// NOTE: the result is invalidated when a new domain is added (e.g. DLL load or before main)

@@ -50,11 +50,11 @@ CC_FORCE_INLINE void write_timebuffer(char* timebuffer, size_t size, std::time_t
 
 }
 
-bool rlog::default_logger_fun(message_ref msg, bool& break_on_log)
+bool rlog::default_logger_fun(message_ref msg, bool& break_on_log, FILE* forced_stream)
 {
     (void)break_on_log; // default behavior is fine
 
-    auto stream = msg.verbosity >= rlog::verbosity::Warning ? stderr : stdout;
+    auto stream = forced_stream ? forced_stream : (msg.verbosity >= rlog::verbosity::Warning ? stderr : stdout);
 
     // prepare timestamp
     char timebuffer[9];
