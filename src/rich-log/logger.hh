@@ -52,6 +52,17 @@ set_console_log_style(console_log_style style);
 /// enables ANSI Escape sequences in Windows conhost.exe and cmd.exe
 RLOG_API bool enable_win32_colors();
 
+/// returns whether ANSI color codes should be emitted
+/// defaults to true (legacy behavior), call auto_detect_colors() to set based on terminal capabilities
+RLOG_API bool colors_enabled();
+
+/// explicitly enable or disable ANSI color output
+RLOG_API void set_colors_enabled(bool enabled);
+
+/// auto-detect whether the terminal supports colors (checks isatty + enable_win32_colors on Windows)
+/// call this early in main() to get correct behavior when piping output
+RLOG_API void auto_detect_colors();
+
 /// sets a global minimum verbosity that will trigger breakpoints
 /// e.g. rlog::set_break_on_log_minimum_verbosity(rlog::verbosity::Warning);
 ///      will break on every warning, error, or fatal LOG

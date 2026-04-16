@@ -23,6 +23,8 @@
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 #endif
 
+#else
+#include <unistd.h> // isatty, fileno
 #endif
 
 #define RLOG_COLOR_TIMESTAMP "\u001b[38;5;37m"
@@ -32,6 +34,7 @@ namespace
 {
 thread_local char tls_thread_name[32] = "";
 rlog::verbosity::type g_break_on_log_min_verbosity = rlog::verbosity::Fatal;
+bool g_colors_enabled = true; // default to true for legacy behavior
 
 rlog::logger_fun g_default_logger;
 thread_local cc::vector<rlog::logger_fun> g_local_logger_stack;
@@ -63,6 +66,8 @@ bool rlog::default_logger_fun(message_ref msg, bool& break_on_log, FILE* forced_
     // brief log line
     // [timestamp] [severity] [domain] [message]
     // 07:14:10 WARNING [NET] <the message being printed>\n
+
+    auto const use_color = g_colors_enabled;
 
     char const* verbosity_color_code = "";
     char const* verbosity_name = "";
@@ -97,6 +102,9 @@ bool rlog::default_logger_fun(message_ref msg, bool& break_on_log, FILE* forced_
         break;
     }
 
+    if (!use_color)
+        verbosity_color_code = "";
+
     // simple mutex to make sure LOGs are "atomic"
     // this is not really high performance, but those users should use set_global_default_logger anyways
     static std::mutex printf_mutex;
@@ -107,16 +115,22 @@ bool rlog::default_logger_fun(message_ref msg, bool& break_on_log, FILE* forced_
 
     // timestamp and severity (always)
     int prefix_length = 9 + std::strlen(verbosity_name);
-    std::fprintf(stream,                                                              //
-                 RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%s" RLOG_COLOR_RESET, //
-                 timebuffer, verbosity_color_code, verbosity_name);
+    if (use_color)
+        std::fprintf(stream,                                                              //
+                     RLOG_COLOR_TIMESTAMP "%s " RLOG_COLOR_RESET "%s%s" RLOG_COLOR_RESET, //
+                     timebuffer, verbosity_color_code, verbosity_name);
+    else
+        std::fprintf(stream, "%s %s", timebuffer, verbosity_name);
 
     // domain, optional
     if (msg.domain != &Log::Default::domain)
     {
-        std::fprintf(stream,                   //
-                     "%s%s " RLOG_COLOR_RESET, //
-                     msg.domain->ansi_color_code, msg.domain->name);
+        if (use_color)
+            std::fprintf(stream,                   //
+                         "%s%s " RLOG_COLOR_RESET, //
+                         msg.domain->ansi_color_code, msg.domain->name);
+        else
+            std::fprintf(stream, "%s ", msg.domain->name);
         prefix_length += std::strlen(msg.domain->name) + 1;
     }
 
@@ -221,21 +235,39 @@ void rlog::set_console_log_style(rlog::console_log_style)
 bool rlog::enable_win32_colors()
 {
 #ifdef CC_OS_WINDOWS
-    ::HANDLE const console_handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
-    if (console_handle == INVALID_HANDLE_VALUE)
-        return false;
+    auto enable_vt = [](::DWORD handle_type) -> bool
+    {
+        ::HANDLE const h = ::GetStdHandle(handle_type);
+        if (h == INVALID_HANDLE_VALUE)
+            return false;
 
-    ::DWORD prev_mode;
-    if (!::GetConsoleMode(console_handle, &prev_mode))
-        return false;
+        ::DWORD mode;
+        if (!::GetConsoleMode(h, &mode))
+            return false;
 
-    prev_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    if (!::SetConsoleMode(console_handle, prev_mode))
-        return false;
+        mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        return ::SetConsoleMode(h, mode) != 0;
+    };
 
-    return true;
+    bool const out_ok = enable_vt(STD_OUTPUT_HANDLE);
+    bool const err_ok = enable_vt(STD_ERROR_HANDLE);
+    return out_ok || err_ok;
 #else
     return true;
+#endif
+}
+
+bool rlog::colors_enabled() { return g_colors_enabled; }
+
+void rlog::set_colors_enabled(bool enabled) { g_colors_enabled = enabled; }
+
+void rlog::auto_detect_colors()
+{
+#ifdef CC_OS_WINDOWS
+    // try to enable VT processing; if it fails (e.g. piped), disable colors
+    g_colors_enabled = enable_win32_colors();
+#else
+    g_colors_enabled = isatty(fileno(stdout)) != 0;
 #endif
 }
 
